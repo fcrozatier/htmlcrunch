@@ -1,3 +1,4 @@
+import { ParseError } from "@fcrozatier/monarch";
 import {
   assert,
   assertEquals,
@@ -235,16 +236,18 @@ Deno.test("custom element names", () => {
   try {
     // Must include a dash
     customElementName.parseOrThrow("abc");
+    unreachable();
   } catch (error) {
-    assertInstanceOf(error, Error);
+    assertInstanceOf(error, ParseError);
     assertStringIncludes(error?.message, "Invalid custom element name");
   }
 
   try {
     // Cannot be a forbidden name
     customElementName.parseOrThrow("annotation-xml");
+    unreachable();
   } catch (error) {
-    assertInstanceOf(error, Error);
+    assertInstanceOf(error, ParseError);
     assertStringIncludes(error?.message, "Forbidden custom element name");
   }
 });
@@ -272,26 +275,23 @@ Deno.test("void element", () => {
   });
 });
 
-Deno.test.only("void elements shouldn't have a closing tag", () => {
+Deno.test("void elements shouldn't have a closing tag", () => {
   try {
     element.parseOrThrow('<input type="text"></input>');
     unreachable();
   } catch (error) {
-    assertInstanceOf(error, Error);
-    assertEquals(error.name, "ParseError");
+    assertInstanceOf(error, ParseError);
     assert(error.message.includes("Unexpected end tag on a void element"));
   }
 
   try {
-    element.parse(`
+    element.parseOrThrow(`
       <input type="text">
 
       </input>`.trim());
     unreachable();
   } catch (error) {
-    console.log(error);
-    assertInstanceOf(error, Error);
-    assertEquals(error.name, "ParseError");
+    assertInstanceOf(error, ParseError);
     assert(error.message.includes("Unexpected end tag on a void element"));
   }
 });
