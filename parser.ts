@@ -139,9 +139,20 @@ const singleQuote = literal("'");
 const doubleQuote = literal('"');
 
 /**
- * Parses HTML raw text
+ * Parses HTML text
  */
-const rawText: Parser<string> = regex(/^[^<]+/);
+const text: Parser<MTextNode> = regex(/^[^<]+/).map(textNode);
+
+/**
+ * Parses raw text inside raw text elements and escapable raw text elements
+ *
+ * Restrictions on the contents of raw text and escapable raw text elements
+ * https://html.spec.whatwg.org/#cdata-rcdata-restrictions
+ */
+const rawText: (tagName: string) => Parser<MTextNode[]> = (tagName: string) =>
+  regex(
+    new RegExp(`^(?:(?!<\/(?i:${tagName})[\t\n\f\r\u0020>/]).|\n)*`),
+  ).map((t) => t.length > 0 ? [textNode(t)] : []);
 
 /**
  * Parses an HTML attribute name
@@ -286,12 +297,7 @@ export const element: Parser<MElement> = createParser((input, position) => {
     kind === ElementKind.RAW_TEXT ||
     kind === ElementKind.ESCAPABLE_RAW_TEXT
   ) {
-    // https://html.spec.whatwg.org/#cdata-rcdata-restrictions
-    const rawText = regex(
-      new RegExp(`^(?:(?!<\/${tagName}(?:>|\n|\/)).|\n)*`),
-    ).map((t) => t.length > 0 ? [textNode(t)] : []);
-
-    childrenElementsParser = rawText;
+    childrenElementsParser = rawText(tagName);
   } else {
     childrenElementsParser = fragments;
   }
@@ -347,7 +353,7 @@ export const element: Parser<MElement> = createParser((input, position) => {
  * The fragments parser
  */
 export const fragments: Parser<MFragment> = many(
-  alt<MNode>(rawText.map(textNode), element, comment),
+  alt<MNode>(text, element, comment),
 );
 
 /**
