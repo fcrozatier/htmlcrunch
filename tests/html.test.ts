@@ -391,11 +391,11 @@ Deno.test("custom elements", () => {
 
   const node = {
     tagName: "something-different",
-    kind: ElementKind.CUSTOM,
+    kind: ElementKind.NORMAL,
     attributes: [],
     children: [textNode("\n      "), {
       tagName: "atom-text-editor",
-      kind: ElementKind.CUSTOM,
+      kind: ElementKind.NORMAL,
       attributes: [["mini", ""]],
       children: [textNode("\n        Hello\n      ")],
     }, textNode("\n    ")],
