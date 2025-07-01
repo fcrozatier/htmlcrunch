@@ -24,9 +24,10 @@ import { assertExists } from "@std/assert";
  */
 export const ElementKind = {
   VOID: "VOID",
+  TEMPLATE: "TEMPLATE",
   RAW_TEXT: "RAW_TEXT",
   ESCAPABLE_RAW_TEXT: "ESCAPABLE_RAW_TEXT",
-  CUSTOM: "CUSTOM",
+  FOREIGN: "FOREIGN",
   NORMAL: "NORMAL",
 } as const;
 
@@ -41,41 +42,44 @@ const NodeKind = {
   ...ElementKind,
 } as const;
 
+interface MNodeBase {
+  kind: string;
+  parent?: MElement | undefined;
+  children?: MFragment | undefined;
+}
+
 /**
  * A comment node
  */
-export type MCommentNode = {
+export interface MCommentNode extends MNodeBase {
   kind: "COMMENT";
   text: string;
-  parent?: MElement | undefined;
   children?: never;
-};
+}
 
 /**
  * A text node
  */
-export type MTextNode = {
+export interface MTextNode extends MNodeBase {
   kind: "TEXT";
   text: string;
-  parent?: MElement | undefined;
   children?: never;
-};
+}
+
+/**
+ * Element node
+ */
+export interface MElement extends MNodeBase {
+  tagName: string;
+  kind: ElementKind;
+  attributes: [string, string][];
+  children?: MFragment;
+}
 
 /**
  * An alternation of comments and whitespaces text nodes
  */
 export type MSpacesAndComments = (MTextNode | MCommentNode)[];
-
-/**
- * Element node
- */
-export type MElement = {
-  tagName: string;
-  kind: ElementKind;
-  attributes: [string, string][];
-  parent?: MElement | undefined;
-  children?: MFragment;
-};
 
 /**
  * A node
@@ -207,6 +211,7 @@ export const customElementName: Parser<string> = potentialCustomElementName
 
 /**
  * HTML tag names are ASCII alphanumeric only
+ *
  * https://html.spec.whatwg.org/#syntax-tag-name
  */
 const htmlTagName = regex(/^[a-z][a-z0-9]*/i)
@@ -448,12 +453,12 @@ export const serializeFragments = (
  * Associate a tag name to its corresponding element kind
  */
 const elementKind = (tag: string): ElementKind => {
+  if (tag === "template") return ElementKind.TEMPLATE;
   if (voidElements.includes(tag)) return ElementKind.VOID;
   if (rawTextElements.includes(tag)) return ElementKind.RAW_TEXT;
   if (escapableRawTextElements.includes(tag)) {
     return ElementKind.ESCAPABLE_RAW_TEXT;
   }
-  if (tag.includes("-")) return ElementKind.CUSTOM;
   return ElementKind.NORMAL;
 };
 
@@ -499,6 +504,11 @@ export const isMNode = (node: unknown): node is MNode => {
   return false;
 };
 
+/**
+ * The void elements
+ *
+ * https://html.spec.whatwg.org/#void-elements
+ */
 const voidElements = [
   "area",
   "base",
@@ -515,7 +525,18 @@ const voidElements = [
   "wbr",
 ];
 
+/**
+ * The raw text elements
+ *
+ * https://html.spec.whatwg.org/#raw-text-elements
+ */
 const rawTextElements = ["script", "style"];
+
+/**
+ * The escapable raw text elements
+ *
+ * https://html.spec.whatwg.org/#escapable-raw-text-elements
+ */
 const escapableRawTextElements = ["textarea", "title"];
 
 /**
