@@ -6,6 +6,12 @@
     "check": "deno fmt --check && deno lint && deno check **/*.ts",
     "coverage": "deno test --coverage && open coverage/html/index.html"
   },
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.ns"],
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  },
   "exports": {
     ".": "./mod.ts"
   },
