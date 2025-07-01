@@ -85,7 +85,7 @@ export const ElementKind = {
  */
 type ElementKind = keyof typeof ElementKind;
 
-const NodeKind = {
+export const NodeKind = {
   COMMENT: "COMMENT",
   TEXT: "TEXT",
   ...ElementKind,
@@ -106,6 +106,8 @@ export const commentNode = (text: string): MCommentNode => ({
   text,
 });
 
+export const COMMENT_REGEX = /^(?!>|->)((?!<!--[^>]|-->|--!>|<!-$)\p{Any})*/v;
+
 /**
  * Parses an HTML comment
  *
@@ -113,7 +115,7 @@ export const commentNode = (text: string): MCommentNode => ({
  */
 export const comment: Parser<MCommentNode> = between(
   literal("<!--"),
-  regex(/^(?!>|->)(?:.|\n)*?(?=(?:<\!--|-->|--!>|<!-)|$)/),
+  regex(COMMENT_REGEX),
   literal("-->"),
 ).map(commentNode);
 

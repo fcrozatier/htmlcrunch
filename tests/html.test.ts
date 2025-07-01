@@ -11,17 +11,38 @@ import {
 import {
   attribute,
   comment,
+  COMMENT_REGEX,
   commentNode,
   customElementName,
   doctype,
   element,
   ElementKind,
   fragments,
+  NodeKind,
   serializeFragments,
   spacesAndComments,
   tagName,
   textNode,
 } from "../parser.ts";
+
+Deno.test("comments", () => {
+  const r = new RegExp(COMMENT_REGEX.source + "$", "v");
+
+  // Can't start with >
+  assertEquals(r.test(">"), false);
+  // Can't start with ->
+  assertEquals(r.test("->"), false);
+  // Can't contain <!--
+  assertEquals(r.test("a<!--b"), false);
+  // Can't contain -->
+  assertEquals(r.test("a-->b"), false);
+  // Can't contain --!>
+  assertEquals(r.test("a--!>b"), false);
+  // Can't contain <!-
+  assertEquals(r.test("a<!-"), false);
+  // Can end in <!
+  assertEquals(r.test("a<!"), true);
+});
 
 Deno.test("comments:simple", () => {
   const singleline = comment.parseOrThrow("<!-- A simple comment -->");
@@ -39,6 +60,15 @@ Deno.test("comments:simple", () => {
      multiline
      comment
      `,
+  });
+
+  const edgeCaseComment = comment.parseOrThrow(`
+    <!--My favorite operators are > and <!-->
+  `.trim());
+
+  assertObjectMatch(edgeCaseComment, {
+    kind: NodeKind.COMMENT,
+    text: "My favorite operators are > and <!",
   });
 });
 
