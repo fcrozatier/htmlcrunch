@@ -195,7 +195,7 @@ const potentialCustomElementName = seq(
   .error("Invalid custom element name");
 
 /**
- * Validate Custom Element names
+ * Validates Custom Element names
  *
  * https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name
  */
@@ -266,7 +266,15 @@ export const element: Parser<MElement> = createParser((input, position) => {
     position: openTagPosition,
   } = openTagResult;
 
-  if (kind === ElementKind.VOID || !remaining) {
+  if (kind === ElementKind.VOID) {
+    // Void elements only have a start tag; end tags must not be specified for void elements. https://html.spec.whatwg.org/#syntax-tags
+    if (remaining.match(new RegExp(`\s*</${tagName}>`))) {
+      return {
+        success: false,
+        message: "Unexpected end tag on a void element",
+        position: openTagPosition,
+      };
+    }
     return openTag;
   }
 
