@@ -280,7 +280,8 @@ export const element: Parser<MElement> = createParser((input, position) => {
   } = openTagResult;
 
   if (kind === ElementKind.VOID) {
-    // Void elements only have a start tag; end tags must not be specified for void elements. https://html.spec.whatwg.org/#syntax-tags
+    // Void elements only have a start tag, end tags must not be specified
+    // https://html.spec.whatwg.org/#syntax-tags
     if (remaining.match(new RegExp(`\s*</${tagName}>`))) {
       return {
         success: false,

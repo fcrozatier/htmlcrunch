@@ -25,7 +25,7 @@ import {
   textNode,
 } from "../parser.ts";
 
-Deno.test("comments", () => {
+Deno.test("comments:regex", () => {
   const r = new RegExp(COMMENT_REGEX.source + "$", "v");
 
   // Can't start with >
