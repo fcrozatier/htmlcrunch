@@ -17,31 +17,6 @@ import {
 } from "@fcrozatier/monarch/common";
 import { assertExists } from "@std/assert";
 
-/**
- * The different types of HTML elements
- *
- * https://html.spec.whatwg.org/#elements-2
- */
-export const ElementKind = {
-  VOID: "VOID",
-  TEMPLATE: "TEMPLATE",
-  RAW_TEXT: "RAW_TEXT",
-  ESCAPABLE_RAW_TEXT: "ESCAPABLE_RAW_TEXT",
-  FOREIGN: "FOREIGN",
-  NORMAL: "NORMAL",
-} as const;
-
-/**
- * The different types HTML elements
- */
-type ElementKind = keyof typeof ElementKind;
-
-const NodeKind = {
-  COMMENT: "COMMENT",
-  TEXT: "TEXT",
-  ...ElementKind,
-} as const;
-
 interface MNodeBase {
   kind: string;
   parent?: MElement | undefined;
@@ -90,6 +65,31 @@ export type MNode = MCommentNode | MTextNode | MElement;
  * Fragment node
  */
 export type MFragment = MNode[];
+
+/**
+ * The different types of HTML elements
+ *
+ * https://html.spec.whatwg.org/#elements-2
+ */
+export const ElementKind = {
+  VOID: "VOID",
+  TEMPLATE: "TEMPLATE",
+  RAW_TEXT: "RAW_TEXT",
+  ESCAPABLE_RAW_TEXT: "ESCAPABLE_RAW_TEXT",
+  FOREIGN: "FOREIGN",
+  NORMAL: "NORMAL",
+} as const;
+
+/**
+ * The different types HTML elements
+ */
+type ElementKind = keyof typeof ElementKind;
+
+const NodeKind = {
+  COMMENT: "COMMENT",
+  TEXT: "TEXT",
+  ...ElementKind,
+} as const;
 
 /**
  * Helper function to create a text node
@@ -195,7 +195,8 @@ const potentialCustomElementName = seq(
   .error("Invalid custom element name");
 
 /**
- * Valid Custom Element names are potential custom element names that are not forbidden
+ * Validate Custom Element names
+ *
  * https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name
  */
 export const customElementName: Parser<string> = potentialCustomElementName
