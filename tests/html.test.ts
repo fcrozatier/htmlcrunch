@@ -1,9 +1,11 @@
 import {
+  assert,
   assertEquals,
   assertExists,
   assertInstanceOf,
   assertObjectMatch,
   assertStringIncludes,
+  unreachable,
 } from "@std/assert";
 import {
   attribute,
@@ -268,6 +270,30 @@ Deno.test("void element", () => {
     kind: ElementKind.VOID,
     attributes: [["type", "text/"]],
   });
+});
+
+Deno.test.only("void elements shouldn't have a closing tag", () => {
+  try {
+    element.parseOrThrow('<input type="text"></input>');
+    unreachable();
+  } catch (error) {
+    assertInstanceOf(error, Error);
+    assertEquals(error.name, "ParseError");
+    assert(error.message.includes("Unexpected end tag on a void element"));
+  }
+
+  try {
+    element.parse(`
+      <input type="text">
+
+      </input>`.trim());
+    unreachable();
+  } catch (error) {
+    console.log(error);
+    assertInstanceOf(error, Error);
+    assertEquals(error.name, "ParseError");
+    assert(error.message.includes("Unexpected end tag on a void element"));
+  }
 });
 
 Deno.test("void elements", () => {
