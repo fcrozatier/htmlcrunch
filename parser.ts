@@ -153,15 +153,17 @@ const text: Parser<MTextNode> = regex(/^[^<]+/).map(textNode);
  */
 const rawText: (tagName: string) => Parser<MTextNode[]> = (tagName: string) =>
   regex(
-    new RegExp(`^(?:(?!<\/(?i:${tagName})[\t\n\f\r\u0020>/]).|\n)*`),
+    new RegExp(`^(?:(?!<\/(?i:${tagName})[\t\n\f\r\u0020>\/]).|\n)*`),
   ).map((t) => t.length > 0 ? [textNode(t)] : []);
 
 /**
  * Parses an HTML attribute name
  *
- * https://html.spec.whatwg.org/#attributes-2
+ * https://html.spec.whatwg.org/#attributes-2 + skip ASCII whitespaces
  */
-const attributeName = regex(/^[^\s="'>\/\p{Noncharacter_Code_Point}]+/u)
+const attributeName = regex(
+  /^[^\x7f-\x9f\s"'>\/=\p{Noncharacter_Code_Point}]+/u,
+)
   .skipTrailing(whitespaces)
   .error("Expected a valid attribute name");
 
@@ -233,7 +235,7 @@ const htmlTagName = regex(/^[a-z][a-z0-9]*/i)
   .error("Invalid html tag name");
 
 /**
- * HTML tag-name state
+ * HTML tag-name
  * https://html.spec.whatwg.org/#tag-name-state
  *
  * More generally XML names can have colons, dashes etc.
