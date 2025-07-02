@@ -20,6 +20,7 @@ import {
   fragments,
   NodeKind,
   serializeFragments,
+  serializeNode,
   spacesAndComments,
   tagName,
   textNode,
@@ -459,6 +460,118 @@ Deno.test("custom elements", () => {
 
   assertExists(res[0]);
   assertObjectMatch(res[0], node);
+});
+
+Deno.test.only("end tag omission ", () => {
+  const li_omissions = element.parseOrThrow(
+    `<ul>
+      <li>Apples
+      <li>Bananas
+    </ul>`,
+  );
+
+  assertEquals(
+    serializeNode(li_omissions),
+    `<ul>
+      <li>Apples
+      </li><li>Bananas
+    </li></ul>`,
+  );
+
+  const dt_dl_omissions = element.parseOrThrow(
+    `<dl>
+      <dt>Coffee
+      <dd>Black hot drink
+      <dt>Milk
+      <dd>White cold drink
+    </dl>`,
+  );
+
+  console.log(serializeNode(dt_dl_omissions));
+
+  // assertEquals(
+  //   serializeNode(dt_dl_omissions),
+  //   `<dl>
+  //     <dt>Coffee</dt>
+  //     <dd>Black hot drink</dd>
+  //     <dt>Milk</dt>
+  //     <dd>White cold drink</dd>
+  //   </dl>`.replaceAll(/\s/g, ""),
+  // );
+
+  // element.parseOrThrow(`
+  //   <body>
+  //     <p>This is the first paragraph.
+  //     <p>This is the second paragraph, and it ends when the next div begins.
+  //     <div>A block element</div>
+  //   </body>
+  // `.trim());
+
+  // element.parseOrThrow(`
+  //   <select>
+  //     <option value="1">One
+  //     <option value="2">Two
+  //     <option value="3">Three
+  //   </select>
+  // `.trim());
+
+  // const table = element.parseOrThrow(`
+  // <table>
+  // <caption>37547 TEE Electric Powered Rail Car Train Functions (Abbreviated)
+  // <colgroup><col><col><col>
+  // <thead>
+  //   <tr> <th>Function                              <th>Control Unit     <th>Central Station
+  // <tbody>
+  //   <tr> <td>Headlights                            <td>✔                <td>✔
+  //   <tr> <td>Interior Lights                       <td>✔                <td>✔
+  //   <tr> <td>Electric locomotive operating sounds  <td>✔                <td>✔
+  //   <tr> <td>Engineer's cab lighting               <td>                 <td>✔
+  //   <tr> <td>Station Announcements - Swiss         <td>                 <td>✔
+  // </table>
+  // `.trim());
+
+  // const tableEquivalent = `
+  // <table>
+  // <caption>37547 TEE Electric Powered Rail Car Train Functions (Abbreviated)</caption>
+  // <colgroup><col><col><col></colgroup>
+  // <thead>
+  //   <tr>
+  //   <th>Function</th>
+  //   <th>Control Unit</th>
+  //   <th>Central Station</th>
+  //   </tr>
+  // </thead>
+  // <tbody>
+  //   <tr>
+  //   <td>Headlights</td>
+  //   <td>✔</td>
+  //   <td>✔</td>
+  //   </tr>
+  //   <tr>
+  //   <td>Interior Lights</td>
+  //   <td>✔</td>
+  //   <td>✔</td>
+  //   </tr>
+  //   <tr>
+  //   <td>Electric locomotive operating sounds</td>
+  //   <td>✔</td>
+  //   <td>✔</td>
+  //   </tr>
+  //   <tr>
+  //   <td>Engineer's cab lighting</td>
+  //   <td></td>
+  //   <td>✔</td>
+  //   </tr>
+  //   <tr>
+  //   <td>Station Announcements - Swiss</td>
+  //   <td></td>
+  //   <td>✔</td>
+  //   </tr>
+  // </tbody>
+  // </table>
+  // `.trim();
+
+  // assertEquals(serializeNode(table), tableEquivalent);
 });
 
 Deno.test("entities", () => {

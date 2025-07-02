@@ -15,7 +15,9 @@ import {
   whitespaces,
   whitespaces1,
 } from "@fcrozatier/monarch/common";
-import { assertExists } from "@std/assert";
+import { assertEquals, assertExists } from "@std/assert";
+
+console.log(Math.random());
 
 interface MNodeBase {
   kind: string;
@@ -272,6 +274,7 @@ export const element: Parser<MElement> = createParser((input, position) => {
 
   if (!openTag.success) return openTag;
 
+  assertEquals(openTag.results.length, 1);
   const [openTagResult] = openTag.results;
   assertExists(openTagResult);
 
@@ -284,7 +287,7 @@ export const element: Parser<MElement> = createParser((input, position) => {
   if (kind === ElementKind.VOID) {
     // Void elements only have a start tag, end tags must not be specified
     // https://html.spec.whatwg.org/#syntax-tags
-    if (remaining.match(new RegExp(`\s*</${tagName}>`))) {
+    if (remaining.match(new RegExp(`^\s*</${tagName}>`, "i"))) {
       return {
         success: false,
         message: "Unexpected end tag on a void element",
@@ -294,9 +297,17 @@ export const element: Parser<MElement> = createParser((input, position) => {
     return openTag;
   }
 
+  const canOmitEndTag = tagName in closedBy;
+  const endTag = `<\/${tagName}>`;
+  const endTagOn = [
+    ...closedBy[tagName]?.open?.map((tag) => `<${tag}>`) ?? [],
+    ...closedBy[tagName]?.closed?.map((tag) => `<\/${tag}>`) ?? [],
+  ];
+
+  const avoidOpening = closedBy[tagName]?.open?.map((tag) => `^(?!<${tag})`)
+    .join("|");
+
   let childrenElementsParser: Parser<MFragment>;
-  const endTagParser = regex(new RegExp(`^</${tagName}>`))
-    .error(`Expected a '</${tagName}>' end tag`);
 
   if (
     kind === ElementKind.RAW_TEXT ||
@@ -304,45 +315,61 @@ export const element: Parser<MElement> = createParser((input, position) => {
   ) {
     childrenElementsParser = rawText(tagName);
   } else {
-    childrenElementsParser = fragments;
+    childrenElementsParser = many(
+      alt<MNode>(
+        text,
+        avoidOpening
+          ? regex(new RegExp(avoidOpening, "i")).chain(() => element)
+          : element,
+        comment,
+      ),
+    );
   }
 
+  const elementNode: MElement = {
+    tagName,
+    kind,
+    attributes,
+    children: [],
+  };
+
+  let childrenRemaining = remaining;
+  let childrenPosition = openTagPosition;
+
   const childrenElements = childrenElementsParser.parse(
-    remaining,
-    openTagPosition,
+    childrenRemaining,
+    childrenPosition,
   );
 
   if (!childrenElements.success) {
     return childrenElements;
   }
 
+  assertEquals(childrenElements.results.length, 1);
   const [childrenElementsResult] = childrenElements.results;
   assertExists(childrenElementsResult);
 
-  const {
-    value: children,
-    remaining: childrenRemaining,
-    position: childrenPosition,
-  } = childrenElementsResult;
+  childrenRemaining = childrenElementsResult.remaining;
+  childrenPosition = childrenElementsResult.position;
+
+  for (const child of childrenElementsResult.value) {
+    child.parent = elementNode;
+    elementNode.children?.push(child);
+  }
+
+  const endTagRegex = new RegExp(
+    [...endTagOn.map((t) => `^(?=${t})`), `^${endTag}`]
+      .join("|"),
+    "i",
+  );
+  const endTagParser = canOmitEndTag ? regex(endTagRegex) : regex(endTagRegex)
+    .error(`Expected a '</${tagName}>' end tag`);
 
   const res = endTagParser.parse(childrenRemaining, childrenPosition);
-
-  // End tag omission would be managed here
   if (!res.success) return res;
 
   const [result] = res.results;
   assertExists(result);
-
-  const elementNode: MElement = {
-    tagName,
-    kind,
-    attributes,
-    children,
-  };
-
-  for (const child of children) {
-    child.parent = elementNode;
-  }
 
   return {
     success: true,
