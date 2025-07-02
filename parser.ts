@@ -525,6 +525,99 @@ export const isMNode = (node: unknown): node is MNode => {
 };
 
 /**
+ * End tag omission data
+ *
+ * The map of elements closed when followed by a specific list of either open or closed tags
+ *
+ * http://developers.whatwg.org/syntax.html#syntax-tag-omission
+ *
+ * https://html.spec.whatwg.org/#syntax-tag-omission
+ */
+const closedBy: Record<
+  string,
+  { open?: string[]; closed?: string[] }
+> = {
+  li: { open: ["li"], closed: ["ul", "ol", "menu"] },
+  dd: { open: ["dd", "dt"], closed: ["dl", "div"] },
+  dt: { open: ["dd", "dt"] },
+  option: {
+    open: ["option", "optgroup", "hr"],
+    closed: ["select", "datalist", "optgroup"],
+  },
+  optgroup: { open: ["optgroup", "hr"], closed: ["select"] },
+  p: {
+    open: [
+      "address",
+      "article",
+      "aside",
+      "blockquote",
+      "div",
+      "dl",
+      "fieldset",
+      "figcaption",
+      "figure",
+      "footer",
+      "form",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "header",
+      "hgroup",
+      "hr",
+      "main",
+      "menu",
+      "nav",
+      "ol",
+      "p",
+      "pre",
+      "section",
+      "table",
+      "ul",
+    ],
+    closed: [
+      "address",
+      "article",
+      "aside",
+      "body",
+      "blockquote",
+      "caption",
+      "details",
+      "dialog",
+      "div",
+      "dd",
+      "dt",
+      "fieldset",
+      "figure",
+      "figcaption",
+      "footer",
+      "form",
+      "header",
+      "hgroup",
+      "li",
+      "main",
+      "nav",
+      "object",
+      "search",
+      "section",
+      "td",
+      "th",
+      "template",
+    ],
+  },
+  rt: { open: ["rt", "rp"], closed: ["ruby"] },
+  rp: { open: ["rt", "rp"], closed: ["ruby"] },
+  thead: { open: ["tbody", "tfoot"] },
+  tbody: { open: ["tbody", "tfoot"], closed: ["table"] },
+  tfoot: { closed: ["table"] },
+  td: { open: ["td", "th"], closed: ["tr"] },
+  th: { open: ["td", "th"], closed: ["tr"] },
+  tr: { open: ["tr"], closed: ["table"] },
+};
+
+/**
  * The void elements
  *
  * https://html.spec.whatwg.org/#void-elements
