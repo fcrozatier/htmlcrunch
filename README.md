@@ -1,18 +1,21 @@
+<div align="center">
+  <img src="/assets/htmlcrunch.png" width="300" alt="">
+</div>
+
 # HTMLCrunch
 
-A simple, lightweight HTML parser
+A simple, lightweight HTML parser built on top of [Monarch](https://jsr.io/@fcrozatier/monarch)
 
 ## Features
 
-- follows the spec closely
+- follows the [spec](https://html.spec.whatwg.org/) closely
 - parse [elements](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/element),
   [fragments](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/fragments) and whole
   [html](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/html) documents
-- [`isCommentNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isCommentNode),
-  [`isTextNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isTextNode) and
-  [`isElementNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isElementNode)
-  guards to assist in tree walking
-- supports tag omissions
+- transform the parse tree and use [`isCommentNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isCommentNode), [`isTextNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isTextNode) [`isElementNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isElementNode)
+  or the generic [`isMNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isMNode) guards to branch on the different cases
+- serialize [nodes](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/serializeNode) and [fragments](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/serializeFragments) back to strings and optionally [remove comments](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/SerializationOptions)
+- the parser supports HTML [end tag omissions](#end-tag-omission)
 
 ## Simple example
 
@@ -37,8 +40,7 @@ assertEquals(content, serialized);
 ## End tag omission
 
 In HTML, the end tags of `<li>`, `<dt>`, `<dd>`, `<p>` and `<option>` elements,
-as well as the end tags of `<table>` children elements can be omitted for a
-terser authoring experience
+as well as the end tags of `<table>` children elements [can be omitted](https://html.spec.whatwg.org/#syntax-tag-omission) for a lighter authoring experience
 
 ```ts
 import { element, serializeNode } from "@fcrozatier/htmlcrunch";
@@ -96,4 +98,10 @@ const table = element.parseOrThrow(
 );
 ```
 
-## [API](https://jsr.io/@fcrozatier/htmlcrunch/doc)
+## API
+
+See the [interactive documentation](https://jsr.io/@fcrozatier/htmlcrunch/doc) on JSR.
+
+The [elements](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/element), [fragments](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/fragments), [html](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/html) and [shadowRoot](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/shadowRoot) parsers are Monarch [Parsers](https://jsr.io/@fcrozatier/monarch/doc/~/Parser) and can thus be composed and extended with other Monarch parsers.
+
+Their main methods are [`parse`](https://jsr.io/@fcrozatier/monarch/doc/~/Parser.prototype.parse) and [`parseOrThrow`](https://jsr.io/@fcrozatier/monarch/doc/~/Parser.prototype.parseOrThrow). See [Monarch](https://jsr.io/@fcrozatier/monarch) documentation for the other available methods.
