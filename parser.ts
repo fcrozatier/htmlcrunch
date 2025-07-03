@@ -25,6 +25,9 @@ interface MNodeBase {
 
 /**
  * A comment node
+ *
+ * @see {@linkcode MTextNode}
+ * @see {@linkcode MElement}
  */
 export interface MCommentNode extends MNodeBase {
   kind: "COMMENT";
@@ -34,6 +37,9 @@ export interface MCommentNode extends MNodeBase {
 
 /**
  * A text node
+ *
+ * @see {@linkcode MCommentNode}
+ * @see {@linkcode MElement}
  */
 export interface MTextNode extends MNodeBase {
   kind: "TEXT";
@@ -42,7 +48,10 @@ export interface MTextNode extends MNodeBase {
 }
 
 /**
- * Element node
+ * An element node
+ *
+ * @see {@linkcode MCommentNode}
+ * @see {@linkcode MTextNode}
  */
 export interface MElement extends MNodeBase {
   tagName: string;
@@ -52,24 +61,37 @@ export interface MElement extends MNodeBase {
 }
 
 /**
- * An alternation of comments and whitespaces text nodes
+ * Describes sequences of comments and whitespaces text nodes
  */
 export type MSpacesAndComments = (MTextNode | MCommentNode)[];
 
 /**
- * A node
+ * The generic node type
  */
 export type MNode = MCommentNode | MTextNode | MElement;
 
 /**
- * Fragment node
+ * A fragment node
  */
 export type MFragment = MNode[];
 
 /**
- * The different types of HTML elements
+ * The different [types of HTML elements](https://html.spec.whatwg.org/#elements-2)
  *
- * https://html.spec.whatwg.org/#elements-2
+ * @example
+ *
+ * ```ts
+ * import { Kind, element } from "@fcrozatier/htmlcrunch";
+ * import { assertObjectMatch } from "@std/assert";
+ *
+ * const input = element.parseOrThrow(`<input type=checkbox>`);
+ *
+ * assertObjectMatch(input, {
+ *   tagName: "input",
+ *   kind: "VOID",
+ *   attributes: []
+ * });
+ * ```
  */
 export const ElementKind = {
   VOID: "VOID",
@@ -85,6 +107,11 @@ export const ElementKind = {
  */
 type ElementKind = keyof typeof ElementKind;
 
+/**
+ * The different types of nodes
+ *
+ * @see {@linkcode ElementKind}
+ */
 export const NodeKind = {
   COMMENT: "COMMENT",
   TEXT: "TEXT",
@@ -92,14 +119,46 @@ export const NodeKind = {
 } as const;
 
 /**
- * Helper function to create a text node
+ * Helper function to create text nodes
+ *
+ * @example
+ *
+ ```ts
+ * import { textNode } from "@fcrozatier/htmlcrunch";
+ * import { assertEquals } from "@std/assert";
+ *
+ * assertEquals(
+ *  textNode("My text"),
+ *  { kind: "TEXT", text: "My text" }
+ * )
+ * ```
+ *
+ * @param text The content of the text node
+ *
+ * @see {@linkcode commentNode}
  */
 export const textNode = (text: string): MTextNode => ({ kind: "TEXT", text });
 
 const whitespaceOnlyText = whitespaces.map(textNode);
 
 /**
- * Helper function to create a comment node
+ * Helper function to create comment nodes
+ *
+ * @example
+ *
+ * ```ts
+ * import { commentNode } from "@fcrozatier/htmlcrunch";
+ * import { assertEquals } from "@std/assert";
+ *
+ * assertEquals(
+ *  commentNode("My comment"),
+ *  { kind: "COMMENT", text: "My comment" }
+ * )
+ * ```
+ *
+ * @param text The content of the comment
+ *
+ * @see {@linkcode commentNode}
  */
 export const commentNode = (text: string): MCommentNode => ({
   kind: "COMMENT",
@@ -109,9 +168,7 @@ export const commentNode = (text: string): MCommentNode => ({
 export const COMMENT_REGEX = /^(?!>|->)((?!<!--[^>]|-->|--!>|<!-$)\p{Any})*/v;
 
 /**
- * Parses an HTML comment
- *
- * https://html.spec.whatwg.org/#comments
+ * Parses [HTML comments](https://html.spec.whatwg.org/#comments)
  */
 export const comment: Parser<MCommentNode> = between(
   literal("<!--"),
@@ -129,9 +186,7 @@ export const spacesAndComments: Parser<MSpacesAndComments> = seq(
 ).map((res) => res.flat());
 
 /**
- * Parses a modern HTML doctype
- *
- * https://html.spec.whatwg.org/#syntax-doctype
+ * Parses a modern [HTML doctype](https://html.spec.whatwg.org/#syntax-doctype)
  */
 export const doctype: Parser<MTextNode> = regex(/^<!DOCTYPE\s+html\s*>/i)
   .map(() => textNode("<!DOCTYPE html>"))
@@ -265,7 +320,46 @@ const startTag: Parser<MElement> = seq(
   });
 
 /**
- * The element parser
+ * Parses a single {@linkcode MElement element}
+ *
+ * @example Hanging bracket
+ *
+ * ```ts
+ * import { commentNode } from "@fcrozatier/htmlcrunch";
+ * import { assertEquals } from "@std/assert";
+ *
+ * const hangingBracket = element.parseOrThrow(
+ *   `<input
+ *   disabled
+ *   >`,
+ * );
+ *
+ * assertEquals(hangingBracket, {
+ *   tagName: "input",
+ *   kind: "VOID",
+ *   attributes: [["disabled",""]],
+ * });
+ * ```
+ *
+ * @example Element with commented content
+ *
+ * ```ts
+ * import { commentNode } from "@fcrozatier/htmlcrunch";
+ * import { assertObjectMatch } from "@std/assert";
+ *
+ * assertObjectMatch(
+ *  element.parseOrThrow(`<div><!-- <span>html inside comment</span> --></div>`),
+ *  {
+ *  kind: "NORMAL",
+ *  tagName: "div",
+ *  attributes: [],
+ *  children: [
+ *    { kind: "COMMENT", text: " <span>html inside comment</span> " },
+ *  ],
+ * })
+ * ```
+ *
+ * @see {@linkcode fragments}
  */
 export const element: Parser<MElement> = createParser((input, position) => {
   const openTag = startTag.parse(input, position);
@@ -379,7 +473,34 @@ export const element: Parser<MElement> = createParser((input, position) => {
 });
 
 /**
- * The fragments parser
+ * Parses HTML {@linkcode MFragment fragments}
+ *
+ * @example
+ *
+ * ```ts
+ * import { fragments, Kind } from "@fcrozatier/htmlcrunch";
+ * import { assertEquals } from "@std/assert";
+ *
+ * const content = fragments.parseOrThrow(
+ *   '<img src="image.png"><br><input type=submit value=Ok />',
+ * )
+ *
+ * assertEquals(content, [
+ *   {
+ *     tagName: "img",
+ *     kind: Kind.VOID,
+ *     attributes: [["src", "image.png"]],
+ *   },
+ *   { tagName: "br", kind: Kind.VOID, attributes: [] },
+ *   {
+ *     tagName: "input",
+ *     kind: Kind.VOID,
+ *     attributes: [["type", "submit"], ["value", "Ok"]],
+ *   },
+ * ]);
+ * ```
+ *
+ * @see {@linkcode element}
  */
 export const fragments: Parser<MFragment> = many(
   alt<MNode>(text, element, comment),
@@ -387,6 +508,36 @@ export const fragments: Parser<MFragment> = many(
 
 /**
  * Parses a template element with declarative shadow root and returns a fragment
+ *
+ * Expects a declarative shadowroot template
+ *
+ * @example Declarative shadowroot template file
+ *
+ * ```ts
+ * import { shadowRoot } from "@fcrozatier/htmlcrunch";
+ *
+ * shadowRoot.parseOrThrow(
+ *  `<template shadowrootmode="open">
+ *    <style>
+ *      h1 {
+ *        color: red;
+ *      }
+ *      ::slotted(p) {
+ *        color: green;
+ *      }
+ *    </style>
+ *
+ *    <article>
+ *      <h1><slot name="title"></slot></h1>
+ *      <h2><slot name="subtitle"></slot></h2>
+ *      <button on:click="hi">hi</button>
+ *      <slot></slot>
+ *    </article>
+ *  </template>`);
+ * ```
+ *
+ * @see {@linkcode fragments}
+ * @see {@linkcode element}
  */
 export const shadowRoot: Parser<MFragment> = createParser(
   (input, position) => {
@@ -424,9 +575,29 @@ export const shadowRoot: Parser<MFragment> = createParser(
 );
 
 /**
- * Parses an html document: a doctype and an html element maybe surrounded by whitespace and comments
+ * Parses an [HTML document](https://html.spec.whatwg.org/#writing)
  *
- * https://html.spec.whatwg.org/#writing
+ * @example
+ *
+ * ```ts
+ * import { html } from "@fcrozatier/htmlcrunch";
+ * import { assertEquals } from "@std/assert";
+ *
+ * html.parseOrThrow(
+ *  `<!DOCTYPE html>
+ *   <html lang="en">
+ *   <head>
+ *     <meta charset="UTF-8">
+ *     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ *     <title>Document</title>
+ *   </head>
+ *   <body>
+ *   </body>
+ *   </html>
+ * `);
+ * ```
+ *
+ * @return A fragment containing the doctype as a text node and the html element node
  */
 export const html: Parser<MFragment> = seq(
   spacesAndComments,
@@ -437,7 +608,7 @@ export const html: Parser<MFragment> = seq(
 ).map((fragments) => fragments.flat());
 
 /**
- * The monarch serialization options
+ * The serialization options
  */
 export type SerializationOptions = {
   /**
@@ -447,7 +618,64 @@ export type SerializationOptions = {
 };
 
 /**
- * Serializes a single node
+ * Serializes a {@linkcode MNode node}
+ *
+ * Follows the [end tag omission rules](https://html.spec.whatwg.org/#syntax-tag-omission) of HTML
+ *
+ * Optionally remove comments
+ *
+ * @example Omitted `</li>`
+ *
+ * ```ts
+ * import { element, serializeNode } from "@fcrozatier/htmlcrunch";
+ * import { assertEquals } from "@std/assert";
+ *
+ * // Omit `<li>` end tags
+ * const ul = element.parseOrThrow(
+ *  `<ul>
+ *    <li>Apples
+ *    <li>Bananas
+ *  </ul>`
+ * );
+ *
+ * assertEquals(serializeNode(ul),
+ *  `<ul>
+ *    <li>Apples
+ *    </li><li>Bananas
+ *  </li></ul>`
+ * );
+ * ```
+ *
+ * @example Remove comments
+ *
+ * ```ts
+ * import { element, serializeNode } from "@fcrozatier/htmlcrunch";
+ * import { assertEquals } from "@std/assert";
+ *
+ * const dl = element.parseOrThrow(
+ *  `<dl>
+ *     <!-- Comment -->
+ *     <dt>Coffee
+ *     <dd>Black hot drink
+ *     <dt>Milk
+ *     <dd>White cold drink
+ *  </dl>`,
+ * );
+ *
+ *  console.log(serializeNode(dl, { removeComments: true }));
+ *  //<dl>
+ *  //
+ *  //  <dt>Coffee
+ *  //  </dt><dd>Black hot drink
+ *  //  </dd><dt>Milk
+ *  //  </dt><dd>White cold drink
+ *  //</dd></dl>
+ * ```
+ *
+ * @param node The node to serialize
+ * @param options Serialization options
+ *
+ * @see {@linkcode serializeFragments}
  */
 export const serializeNode = (
   node: MNode,
@@ -484,7 +712,37 @@ export const serializeNode = (
 };
 
 /**
- * Serializes a fragment
+ * Serializes a {@linkcode MFragment fragment} node
+ *
+ * @example
+ *
+ * ```ts
+ * import { fragments, serializeFragments } from "@fcrozatier/htmlcrunch";
+ * import { assertEquals } from "@std/assert";
+ *
+ * const content = fragments.parseOrThrow(
+ * `<!-- A form -->
+ *  <form>
+ *   <input type="checkbox" checked>
+ *   <input type="text" checked>
+ *   <button>Send</button>
+ *  </form>`);
+ *
+ * assertEquals(
+ *  serializeFragments(content, { removeComments: true }),
+ *  `
+ *  <form>
+ *   <input type="checkbox" checked>
+ *   <input type="text" checked>
+ *   <button>Send</button>
+ *  </form>`
+ * );
+ * ```
+ *
+ * @param fragment The fragment to serialize
+ * @param options Serialization options
+ *
+ * @see {@linkcode serializeNode}
  */
 export const serializeFragments = (
   fragment: MFragment,
@@ -494,7 +752,7 @@ export const serializeFragments = (
 };
 
 /**
- * Associate a tag name to its corresponding element kind
+ * Associates a tag name to its corresponding {@linkcode ElementKind}
  */
 const elementKind = (tag: string): ElementKind => {
   if (tag === "template") return ElementKind.TEMPLATE;
@@ -507,21 +765,58 @@ const elementKind = (tag: string): ElementKind => {
 };
 
 /**
- * Checks whether a {@linkcode MNode} is an {@linkcode MTextNode}
+ * Checks whether an {@linkcode MNode} is an {@linkcode MCommentNode}
+ *
+ * @example
+ *
+ * ```ts
+ * import { fragments, isCommentNode } from "@fcrozatier/htmlcrunch";
+ * import { assert } from "@std/assert";
+ *
+ * const [comment] = fragments.parseOrThrow("<!-- -->");
+ * assert(isCommentNode(comment));
+ * ```
+ *
+ * @see {@linkcode isTextNode}
+ * @see {@linkcode isElementNode}
  */
 export const isCommentNode = (node: unknown): node is MCommentNode => {
   return isMNode(node) && node.kind === "COMMENT";
 };
 
 /**
- * Checks whether a {@linkcode MNode} is an {@linkcode MTextNode}
+ * Checks whether an {@linkcode MNode} is an {@linkcode MTextNode}
+ *
+ * @example
+ *
+ * ```ts
+ * import { fragments, isTextNode } from "@fcrozatier/htmlcrunch";
+ * import { assert } from "@std/assert";
+ *
+ * const [text] = fragments.parseOrThrow("Hello");
+ * assert(isTextNode(text));
+ * ```
+ * @see {@linkcode isCommentNode}
+ * @see {@linkcode isElementNode}
  */
 export const isTextNode = (node: unknown): node is MTextNode => {
   return isMNode(node) && node.kind === "TEXT";
 };
 
 /**
- * Checks whether a {@linkcode MNode} is an {@linkcode MElement}
+ * Checks whether an {@linkcode MNode} is an {@linkcode MElement}
+ *
+ * @example
+ *
+ * ```ts
+ * import { element, isTextNode } from "@fcrozatier/htmlcrunch";
+ * import { assert } from "@std/assert";
+ *
+ * const [element] = fragments.parseOrThrow("<input>");
+ * assert(isElementNode(element));
+ *
+ * @see {@linkcode isCommentNode}
+ * @see {@linkcode isTextNode}
  */
 export const isElementNode = (node: unknown): node is MElement => {
   return isMNode(node) && Object.keys(ElementKind).includes(node.kind);
@@ -529,6 +824,18 @@ export const isElementNode = (node: unknown): node is MElement => {
 
 /**
  * An {@linkcode MNode} guard
+ *
+ * @example
+ *
+ * ```ts
+ * import { isMNode } from "@fcrozatier/htmlcrunch";
+ * import { assert } from "@std/assert";
+ *
+ * assertEquals(isMNode({}), false);
+ *
+ * @see {@linkcode isCommentNode}
+ * @see {@linkcode isElementNode}
+ * @see {@linkcode isTextNode}
  */
 export const isMNode = (node: unknown): node is MNode => {
   if (node === null) return false;
@@ -551,11 +858,9 @@ export const isMNode = (node: unknown): node is MNode => {
 /**
  * End tag omission data
  *
- * The map of elements closed when followed by a specific list of either open or closed tags
+ * The map of elements that can omit their end tag when followed by specific open or closed tags
  *
- * http://developers.whatwg.org/syntax.html#syntax-tag-omission
- *
- * https://html.spec.whatwg.org/#syntax-tag-omission
+ * @see https://html.spec.whatwg.org/#syntax-tag-omission
  */
 const endTagOmission: Record<
   string,
@@ -648,9 +953,7 @@ const endTagOmission: Record<
 };
 
 /**
- * The void elements
- *
- * https://html.spec.whatwg.org/#void-elements
+ * The [void elements](https://html.spec.whatwg.org/#void-elements)
  */
 const voidElements = [
   "area",
@@ -669,16 +972,12 @@ const voidElements = [
 ];
 
 /**
- * The raw text elements
- *
- * https://html.spec.whatwg.org/#raw-text-elements
+ * The [raw text elements](https://html.spec.whatwg.org/#raw-text-elements)
  */
 const rawTextElements = ["script", "style"];
 
 /**
- * The escapable raw text elements
- *
- * https://html.spec.whatwg.org/#escapable-raw-text-elements
+ * The [escapable raw text elements](https://html.spec.whatwg.org/#escapable-raw-text-elements)
  */
 const escapableRawTextElements = ["textarea", "title"];
 

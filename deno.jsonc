@@ -18,5 +18,8 @@
   "imports": {
     "@fcrozatier/monarch": "jsr:@fcrozatier/monarch@^3.2.0",
     "@std/assert": "jsr:@std/assert@^1.0.13"
+  },
+  "publish": {
+    "exclude": ["./tests/**/*", "./.github/**/*", "./.vscode/**/*"]
   }
 }
