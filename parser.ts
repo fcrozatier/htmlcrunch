@@ -15,7 +15,7 @@ import {
   whitespaces,
   whitespaces1,
 } from "@fcrozatier/monarch/common";
-import { assertExists } from "@std/assert";
+import { assertEquals, assertExists } from "@std/assert";
 
 interface MNodeBase {
   kind: string;
@@ -153,7 +153,7 @@ const text: Parser<MTextNode> = regex(/^[^<]+/).map(textNode);
  */
 const rawText: (tagName: string) => Parser<MTextNode[]> = (tagName: string) =>
   regex(
-    new RegExp(`^(?:(?!<\/(?i:${tagName})[\t\n\f\r\u0020>\/]).|\n)*`),
+    new RegExp(String.raw`^(?:(?!</(?i:${tagName})[\t\n\f\r\u0020>/]).|\n)*`),
   ).map((t) => t.length > 0 ? [textNode(t)] : []);
 
 /**
@@ -272,6 +272,7 @@ export const element: Parser<MElement> = createParser((input, position) => {
 
   if (!openTag.success) return openTag;
 
+  assertEquals(openTag.results.length, 1);
   const [openTagResult] = openTag.results;
   assertExists(openTagResult);
 
@@ -284,7 +285,7 @@ export const element: Parser<MElement> = createParser((input, position) => {
   if (kind === ElementKind.VOID) {
     // Void elements only have a start tag, end tags must not be specified
     // https://html.spec.whatwg.org/#syntax-tags
-    if (remaining.match(new RegExp(`\s*</${tagName}>`))) {
+    if (remaining.match(new RegExp(String.raw`^\s*</${tagName}>`, "i"))) {
       return {
         success: false,
         message: "Unexpected end tag on a void element",
@@ -294,9 +295,10 @@ export const element: Parser<MElement> = createParser((input, position) => {
     return openTag;
   }
 
+  const avoidOpenTags = endTagOmission[tagName]?.open
+    ?.map((tag) => `(?!<${tag})`).join("");
+
   let childrenElementsParser: Parser<MFragment>;
-  const endTagParser = regex(new RegExp(`^</${tagName}>`))
-    .error(`Expected a '</${tagName}>' end tag`);
 
   if (
     kind === ElementKind.RAW_TEXT ||
@@ -304,45 +306,67 @@ export const element: Parser<MElement> = createParser((input, position) => {
   ) {
     childrenElementsParser = rawText(tagName);
   } else {
-    childrenElementsParser = fragments;
+    childrenElementsParser = many(
+      alt<MNode>(
+        text,
+        avoidOpenTags
+          ? regex(new RegExp("^" + avoidOpenTags, "i")).chain(() => element)
+          : element,
+        comment,
+      ),
+    );
   }
 
+  const elementNode: MElement = {
+    tagName,
+    kind,
+    attributes,
+    children: [],
+  };
+
+  let childrenRemaining = remaining;
+  let childrenPosition = openTagPosition;
+
   const childrenElements = childrenElementsParser.parse(
-    remaining,
-    openTagPosition,
+    childrenRemaining,
+    childrenPosition,
   );
 
   if (!childrenElements.success) {
     return childrenElements;
   }
 
+  assertEquals(childrenElements.results.length, 1);
   const [childrenElementsResult] = childrenElements.results;
   assertExists(childrenElementsResult);
 
-  const {
-    value: children,
-    remaining: childrenRemaining,
-    position: childrenPosition,
-  } = childrenElementsResult;
+  childrenRemaining = childrenElementsResult.remaining;
+  childrenPosition = childrenElementsResult.position;
+
+  for (const child of childrenElementsResult.value) {
+    child.parent = elementNode;
+    elementNode.children?.push(child);
+  }
+
+  const endTagLookahead = [
+    ...endTagOmission[tagName]?.open?.map((tag) => `^(?=<${tag})`) ?? [],
+    ...endTagOmission[tagName]?.closed?.map((tag) => `^(?=</${tag}>)`) ?? [],
+  ];
+
+  const endTagRegex = new RegExp(
+    [...endTagLookahead, `^</${tagName}>`].join("|"),
+    "i",
+  );
+
+  const endTagParser = tagName in endTagOmission
+    ? regex(endTagRegex)
+    : regex(endTagRegex).error(`Expected a '</${tagName}>' end tag`);
 
   const res = endTagParser.parse(childrenRemaining, childrenPosition);
-
-  // End tag omission would be managed here
   if (!res.success) return res;
 
   const [result] = res.results;
   assertExists(result);
-
-  const elementNode: MElement = {
-    tagName,
-    kind,
-    attributes,
-    children,
-  };
-
-  for (const child of children) {
-    child.parent = elementNode;
-  }
 
   return {
     success: true,
@@ -522,6 +546,105 @@ export const isMNode = (node: unknown): node is MNode => {
   }
 
   return false;
+};
+
+/**
+ * End tag omission data
+ *
+ * The map of elements closed when followed by a specific list of either open or closed tags
+ *
+ * http://developers.whatwg.org/syntax.html#syntax-tag-omission
+ *
+ * https://html.spec.whatwg.org/#syntax-tag-omission
+ */
+const endTagOmission: Record<
+  string,
+  { open?: string[]; closed?: string[] }
+> = {
+  caption: {
+    open: ["colgroup", "col", "thead", "tbody", "tfoot", "tr", "th", "td"],
+  },
+  colgroup: {
+    open: ["thead", "tbody", "tfoot", "tr"],
+  },
+  li: { open: ["li"], closed: ["ul", "ol", "menu"] },
+  dd: { open: ["dd", "dt"], closed: ["dl", "div"] },
+  dt: { open: ["dd", "dt"] },
+  option: {
+    open: ["option", "optgroup", "hr"],
+    closed: ["select", "datalist", "optgroup"],
+  },
+  optgroup: { open: ["optgroup", "hr"], closed: ["select"] },
+  p: {
+    open: [
+      "address",
+      "article",
+      "aside",
+      "blockquote",
+      "div",
+      "dl",
+      "fieldset",
+      "figcaption",
+      "figure",
+      "footer",
+      "form",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "header",
+      "hgroup",
+      "hr",
+      "main",
+      "menu",
+      "nav",
+      "ol",
+      "p",
+      "pre",
+      "section",
+      "table",
+      "ul",
+    ],
+    closed: [
+      "address",
+      "article",
+      "aside",
+      "body",
+      "blockquote",
+      "caption",
+      "details",
+      "dialog",
+      "div",
+      "dd",
+      "dt",
+      "fieldset",
+      "figure",
+      "figcaption",
+      "footer",
+      "form",
+      "header",
+      "hgroup",
+      "li",
+      "main",
+      "nav",
+      "object",
+      "search",
+      "section",
+      "td",
+      "th",
+      "template",
+    ],
+  },
+  rt: { open: ["rt", "rp"], closed: ["ruby"] },
+  rp: { open: ["rt", "rp"], closed: ["ruby"] },
+  thead: { open: ["tbody", "tfoot"] },
+  tbody: { open: ["tbody", "tfoot"], closed: ["table"] },
+  tfoot: { closed: ["table"] },
+  td: { open: ["td", "th", "tr"], closed: ["tr", "table"] },
+  th: { open: ["td", "th", "tbody"], closed: ["tr", "thead"] },
+  tr: { open: ["tr", "tbody"], closed: ["table", "thead"] },
 };
 
 /**
