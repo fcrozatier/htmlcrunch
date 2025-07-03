@@ -1,3 +1,9 @@
+/**
+ * A simple, lightweight HTML parser
+ *
+ *  @module
+ */
+
 export {
   booleanAttributes,
   commentNode,
