@@ -18,9 +18,15 @@ import {
   element,
   ElementKind,
   fragments,
+  html,
+  isCommentNode,
+  isElementNode,
+  isMNode,
+  isTextNode,
   NodeKind,
   serializeFragments,
   serializeNode,
+  shadowRoot,
   spacesAndComments,
   tagName,
   textNode,
@@ -286,6 +292,20 @@ Deno.test("custom element names", () => {
 Deno.test("tag names", () => {
   const name = tagName.parseOrThrow("Abc-d");
   assertEquals(name, "abc-d");
+});
+
+Deno.test("disallow self-closing non-void element", () => {
+  try {
+    element.parseOrThrow("<div />");
+    unreachable();
+  } catch (error) {
+    assertInstanceOf(error, ParseError);
+    assert(
+      error.message.includes(
+        "Unexpected self-closing tag on a non-void element",
+      ),
+    );
+  }
 });
 
 Deno.test("void element", () => {
@@ -634,11 +654,23 @@ Deno.test("serialize", () => {
   for (const sample of [...samples, indentation, spaces, nested]) {
     assertEquals(serializeFragments(fragments.parseOrThrow(sample)), sample);
   }
+
+  assertEquals(
+    serializeFragments(
+      fragments.parseOrThrow(
+        `<!-- A form --><form><input value='"' checked></form>`,
+      ),
+      {
+        removeComments: true,
+      },
+    ),
+    `<form><input value='"' checked></form>`,
+  );
 });
 
 // A single newline at the start or end of pre blocks is ignored by the HTML parser but a space followed by a newline is not
 // https://html.spec.whatwg.org/multipage/parsing.html#parsing-main-inbody
-Deno.test("serialize preformatted", () => {
+Deno.test("serialize pre elements", () => {
   const newlines = `<pre>
 
 Two newlines, only the first one would be dropped
@@ -662,4 +694,74 @@ A single whitespace before the linebreak is not dropped
       sample,
     );
   }
+});
+
+Deno.test("declarative shadowroot", () => {
+  try {
+    shadowRoot.parseOrThrow(`<span></span>`);
+    unreachable();
+  } catch (error) {
+    assertInstanceOf(error, ParseError);
+    assert(error.message.includes("Expected a template element"));
+  }
+
+  try {
+    shadowRoot.parseOrThrow(`<template></template>`);
+    unreachable();
+  } catch (error) {
+    assertInstanceOf(error, ParseError);
+    assert(error.message.includes("Expected a declarative shadow root"));
+  }
+
+  shadowRoot.parseOrThrow(
+    `<template shadowrootmode="open">
+  <style>
+    h1 {
+      color: red;
+    }
+    ::slotted(p) {
+      color: green;
+    }
+  </style>
+
+  <article>
+    <h1><slot name="title"></slot></h1>
+    <h2><slot name="subtitle"></slot></h2>
+    <button on:click="hi">hi</button>
+    <slot></slot>
+  </article>
+</template>
+`,
+  );
+});
+
+Deno.test("html", () => {
+  html.parseOrThrow(
+    `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+
+</body>
+</html>`,
+  );
+});
+
+Deno.test("guards", () => {
+  const [comment] = fragments.parseOrThrow("<!-- -->");
+  assert(isCommentNode(comment));
+
+  const [element] = fragments.parseOrThrow("<input>");
+  assert(isElementNode(element));
+
+  const [text] = fragments.parseOrThrow("Hello");
+  assert(isTextNode(text));
+
+  assertEquals(isMNode(null), false);
+  assertEquals(isMNode(1), false);
+  assertEquals(isMNode({}), false);
 });
