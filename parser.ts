@@ -17,8 +17,6 @@ import {
 } from "@fcrozatier/monarch/common";
 import { assertEquals, assertExists } from "@std/assert";
 
-console.log(Math.random());
-
 interface MNodeBase {
   kind: string;
   parent?: MElement | undefined;
@@ -297,15 +295,8 @@ export const element: Parser<MElement> = createParser((input, position) => {
     return openTag;
   }
 
-  const canOmitEndTag = tagName in closedBy;
-  const endTag = `<\/${tagName}>`;
-  const endTagOn = [
-    ...closedBy[tagName]?.open?.map((tag) => `<${tag}>`) ?? [],
-    ...closedBy[tagName]?.closed?.map((tag) => `<\/${tag}>`) ?? [],
-  ];
-
-  const avoidOpening = closedBy[tagName]?.open?.map((tag) => `^(?!<${tag})`)
-    .join("|");
+  const avoidOpenTags = endTagOmission[tagName]?.open
+    ?.map((tag) => `(?!<${tag})`).join("");
 
   let childrenElementsParser: Parser<MFragment>;
 
@@ -318,8 +309,8 @@ export const element: Parser<MElement> = createParser((input, position) => {
     childrenElementsParser = many(
       alt<MNode>(
         text,
-        avoidOpening
-          ? regex(new RegExp(avoidOpening, "i")).chain(() => element)
+        avoidOpenTags
+          ? regex(new RegExp("^" + avoidOpenTags, "i")).chain(() => element)
           : element,
         comment,
       ),
@@ -357,13 +348,19 @@ export const element: Parser<MElement> = createParser((input, position) => {
     elementNode.children?.push(child);
   }
 
+  const endTagLookahead = [
+    ...endTagOmission[tagName]?.open?.map((tag) => `^(?=<${tag})`) ?? [],
+    ...endTagOmission[tagName]?.closed?.map((tag) => `^(?=</${tag}>)`) ?? [],
+  ];
+
   const endTagRegex = new RegExp(
-    [...endTagOn.map((t) => `^(?=${t})`), `^${endTag}`]
-      .join("|"),
+    [...endTagLookahead, `^</${tagName}>`].join("|"),
     "i",
   );
-  const endTagParser = canOmitEndTag ? regex(endTagRegex) : regex(endTagRegex)
-    .error(`Expected a '</${tagName}>' end tag`);
+
+  const endTagParser = tagName in endTagOmission
+    ? regex(endTagRegex)
+    : regex(endTagRegex).error(`Expected a '</${tagName}>' end tag`);
 
   const res = endTagParser.parse(childrenRemaining, childrenPosition);
   if (!res.success) return res;
