@@ -557,10 +557,16 @@ export const isMNode = (node: unknown): node is MNode => {
  *
  * https://html.spec.whatwg.org/#syntax-tag-omission
  */
-const closedBy: Record<
+const endTagOmission: Record<
   string,
   { open?: string[]; closed?: string[] }
 > = {
+  caption: {
+    open: ["colgroup", "col", "thead", "tbody", "tfoot", "tr", "th", "td"],
+  },
+  colgroup: {
+    open: ["thead", "tbody", "tfoot", "tr"],
+  },
   li: { open: ["li"], closed: ["ul", "ol", "menu"] },
   dd: { open: ["dd", "dt"], closed: ["dl", "div"] },
   dt: { open: ["dd", "dt"] },
@@ -636,9 +642,9 @@ const closedBy: Record<
   thead: { open: ["tbody", "tfoot"] },
   tbody: { open: ["tbody", "tfoot"], closed: ["table"] },
   tfoot: { closed: ["table"] },
-  td: { open: ["td", "th"], closed: ["tr"] },
-  th: { open: ["td", "th"], closed: ["tr"] },
-  tr: { open: ["tr"], closed: ["table"] },
+  td: { open: ["td", "th", "tr"], closed: ["tr", "table"] },
+  th: { open: ["td", "th", "tbody"], closed: ["tr", "thead"] },
+  tr: { open: ["tr", "tbody"], closed: ["table", "thead"] },
 };
 
 /**
