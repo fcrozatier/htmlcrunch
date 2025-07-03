@@ -316,10 +316,11 @@ Deno.test("void elements shouldn't have a closing tag", () => {
   }
 
   try {
-    element.parseOrThrow(`
-      <input type="text">
+    element.parseOrThrow(
+      `<input type="text">
 
-      </input>`.trim());
+      </input>`,
+    );
     unreachable();
   } catch (error) {
     assertInstanceOf(error, ParseError);
@@ -462,7 +463,7 @@ Deno.test("custom elements", () => {
   assertObjectMatch(res[0], node);
 });
 
-Deno.test.only("end tag omission ", () => {
+Deno.test("end tag omission ", () => {
   const li_omissions = element.parseOrThrow(
     `<ul>
       <li>Apples
@@ -478,7 +479,7 @@ Deno.test.only("end tag omission ", () => {
     </li></ul>`,
   );
 
-  const dt_dl_omissions = element.parseOrThrow(
+  const in_dl_omissions = element.parseOrThrow(
     `<dl>
       <dt>Coffee
       <dd>Black hot drink
@@ -487,91 +488,80 @@ Deno.test.only("end tag omission ", () => {
     </dl>`,
   );
 
-  console.log(serializeNode(dt_dl_omissions));
+  assertEquals(
+    serializeNode(in_dl_omissions),
+    `<dl>
+      <dt>Coffee
+      </dt><dd>Black hot drink
+      </dd><dt>Milk
+      </dt><dd>White cold drink
+    </dd></dl>`,
+  );
 
-  // assertEquals(
-  //   serializeNode(dt_dl_omissions),
-  //   `<dl>
-  //     <dt>Coffee</dt>
-  //     <dd>Black hot drink</dd>
-  //     <dt>Milk</dt>
-  //     <dd>White cold drink</dd>
-  //   </dl>`.replaceAll(/\s/g, ""),
-  // );
+  const p_omissions = element.parseOrThrow(
+    `<body>
+      <p>This is the first paragraph.
+      <p>This is the second paragraph, and it ends when the next div begins.
+      <div>A block element</div>
+    </body>`,
+  );
 
-  // element.parseOrThrow(`
-  //   <body>
-  //     <p>This is the first paragraph.
-  //     <p>This is the second paragraph, and it ends when the next div begins.
-  //     <div>A block element</div>
-  //   </body>
-  // `.trim());
+  assertEquals(
+    serializeNode(p_omissions),
+    `<body>
+      <p>This is the first paragraph.
+      </p><p>This is the second paragraph, and it ends when the next div begins.
+      </p><div>A block element</div>
+    </body>`,
+  );
 
-  // element.parseOrThrow(`
-  //   <select>
-  //     <option value="1">One
-  //     <option value="2">Two
-  //     <option value="3">Three
-  //   </select>
-  // `.trim());
+  const option_omissions = element.parseOrThrow(
+    `<select>
+      <option value="1">One
+      <option value="2">Two
+      <option value="3">Three
+    </select>`,
+  );
 
-  // const table = element.parseOrThrow(`
-  // <table>
-  // <caption>37547 TEE Electric Powered Rail Car Train Functions (Abbreviated)
-  // <colgroup><col><col><col>
-  // <thead>
-  //   <tr> <th>Function                              <th>Control Unit     <th>Central Station
-  // <tbody>
-  //   <tr> <td>Headlights                            <td>✔                <td>✔
-  //   <tr> <td>Interior Lights                       <td>✔                <td>✔
-  //   <tr> <td>Electric locomotive operating sounds  <td>✔                <td>✔
-  //   <tr> <td>Engineer's cab lighting               <td>                 <td>✔
-  //   <tr> <td>Station Announcements - Swiss         <td>                 <td>✔
-  // </table>
-  // `.trim());
+  assertEquals(
+    serializeNode(option_omissions),
+    `<select>
+      <option value="1">One
+      </option><option value="2">Two
+      </option><option value="3">Three
+    </option></select>`,
+  );
 
-  // const tableEquivalent = `
-  // <table>
-  // <caption>37547 TEE Electric Powered Rail Car Train Functions (Abbreviated)</caption>
-  // <colgroup><col><col><col></colgroup>
-  // <thead>
-  //   <tr>
-  //   <th>Function</th>
-  //   <th>Control Unit</th>
-  //   <th>Central Station</th>
-  //   </tr>
-  // </thead>
-  // <tbody>
-  //   <tr>
-  //   <td>Headlights</td>
-  //   <td>✔</td>
-  //   <td>✔</td>
-  //   </tr>
-  //   <tr>
-  //   <td>Interior Lights</td>
-  //   <td>✔</td>
-  //   <td>✔</td>
-  //   </tr>
-  //   <tr>
-  //   <td>Electric locomotive operating sounds</td>
-  //   <td>✔</td>
-  //   <td>✔</td>
-  //   </tr>
-  //   <tr>
-  //   <td>Engineer's cab lighting</td>
-  //   <td></td>
-  //   <td>✔</td>
-  //   </tr>
-  //   <tr>
-  //   <td>Station Announcements - Swiss</td>
-  //   <td></td>
-  //   <td>✔</td>
-  //   </tr>
-  // </tbody>
-  // </table>
-  // `.trim();
+  const in_table_omissions = element.parseOrThrow(
+    `<table>
+  <caption>37547 TEE Electric Powered Rail Car Train Functions (Abbreviated)
+  <colgroup><col><col><col>
+  <thead>
+    <tr> <th>Function                              <th>Control Unit     <th>Central Station
+  <tbody>
+    <tr> <td>Headlights                            <td>✔                <td>✔
+    <tr> <td>Interior Lights                       <td>✔                <td>✔
+    <tr> <td>Electric locomotive operating sounds  <td>✔                <td>✔
+    <tr> <td>Engineer's cab lighting               <td>                 <td>✔
+    <tr> <td>Station Announcements - Swiss         <td>                 <td>✔
+  </table>`,
+  );
 
-  // assertEquals(serializeNode(table), tableEquivalent);
+  assertEquals(
+    serializeNode(in_table_omissions),
+    `<table>
+  <caption>37547 TEE Electric Powered Rail Car Train Functions (Abbreviated)
+  </caption><colgroup><col><col><col>
+  </colgroup><thead>
+    <tr> <th>Function                              </th><th>Control Unit     </th><th>Central Station
+  </th></tr></thead><tbody>
+    <tr> <td>Headlights                            </td><td>✔                </td><td>✔
+    </td></tr><tr> <td>Interior Lights                       </td><td>✔                </td><td>✔
+    </td></tr><tr> <td>Electric locomotive operating sounds  </td><td>✔                </td><td>✔
+    </td></tr><tr> <td>Engineer's cab lighting               </td><td>                 </td><td>✔
+    </td></tr><tr> <td>Station Announcements - Swiss         </td><td>                 </td><td>✔
+  </td></tr></tbody></table>`,
+  );
 });
 
 Deno.test("entities", () => {
