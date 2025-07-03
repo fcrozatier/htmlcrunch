@@ -153,7 +153,7 @@ const text: Parser<MTextNode> = regex(/^[^<]+/).map(textNode);
  */
 const rawText: (tagName: string) => Parser<MTextNode[]> = (tagName: string) =>
   regex(
-    new RegExp(`^(?:(?!<\/(?i:${tagName})[\t\n\f\r\u0020>\/]).|\n)*`),
+    new RegExp(String.raw`^(?:(?!</(?i:${tagName})[\t\n\f\r\u0020>/]).|\n)*`),
   ).map((t) => t.length > 0 ? [textNode(t)] : []);
 
 /**
@@ -285,7 +285,7 @@ export const element: Parser<MElement> = createParser((input, position) => {
   if (kind === ElementKind.VOID) {
     // Void elements only have a start tag, end tags must not be specified
     // https://html.spec.whatwg.org/#syntax-tags
-    if (remaining.match(new RegExp(`^\s*</${tagName}>`, "i"))) {
+    if (remaining.match(new RegExp(String.raw`^\s*</${tagName}>`, "i"))) {
       return {
         success: false,
         message: "Unexpected end tag on a void element",
