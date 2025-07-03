@@ -662,7 +662,7 @@ export type SerializationOptions = {
  *  </dl>`,
  * );
  *
- *  console.log(serializeNode(dl, { removeComments: true })),
+ *  console.log(serializeNode(dl, { removeComments: true }));
  *  //<dl>
  *  //
  *  //  <dt>Coffee
