@@ -5,15 +5,20 @@ A simple, lightweight HTML parser
 ## Features
 
 - follows the spec closely
-- parse [elements](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/element), [fragments](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/fragments) and whole [html](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/html) documents
-- [`isCommentNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isCommentNode), [`isTextNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isTextNode) and [`isElementNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isElementNode) guards to assist in tree walking
+- parse [elements](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/element),
+  [fragments](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/fragments) and whole
+  [html](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/html) documents
+- [`isCommentNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isCommentNode),
+  [`isTextNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isTextNode) and
+  [`isElementNode`](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/isElementNode)
+  guards to assist in tree walking
 - supports tag omissions
 
 ## Simple example
 
 ```ts
 import { fragments, serializeFragments } from "@fcrozatier/htmlcrunch";
-import { assertEquals } from '@std/assert';
+import { assertEquals } from "@std/assert";
 
 // A string of html or an html file
 const content = `<div>html string...</div>`;
@@ -31,7 +36,9 @@ assertEquals(content, serialized);
 
 ## End tag omission
 
-In HTML, the end tags of `<li>`, `<dt>`, `<dd>`, `<p>` and `<option>` elements, as well as the end tags of `<table>` children elements can be omitted for a terser authoring experience
+In HTML, the end tags of `<li>`, `<dt>`, `<dd>`, `<p>` and `<option>` elements,
+as well as the end tags of `<table>` children elements can be omitted for a
+terser authoring experience
 
 ```ts
 import { element, serializeNode } from "@fcrozatier/htmlcrunch";
@@ -41,7 +48,7 @@ element.parseOrThrow(
   `<ul>
     <li>Apples
     <li>Bananas
-  </ul>`
+  </ul>`,
 );
 
 // Omit `<dt>` and `<dd>` end tags
@@ -74,7 +81,7 @@ element.parseOrThrow(
 
 // Omit end tags inside a `<table>`
 const table = element.parseOrThrow(
- `<table>
+  `<table>
   <caption>37547 TEE Electric Powered Rail Car Train Functions (Abbreviated)
   <colgroup><col><col><col>
   <thead>
@@ -85,7 +92,7 @@ const table = element.parseOrThrow(
    <tr> <td>Electric locomotive operating sounds  <td>✔                <td>✔
    <tr> <td>Engineer's cab lighting               <td>                 <td>✔
    <tr> <td>Station Announcements - Swiss         <td>                 <td>✔
-  </table>`
+  </table>`,
 );
 ```
 
