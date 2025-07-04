@@ -52,22 +52,22 @@ assertEquals(content, serialized);
 HtmlCrunch implements the following parts of the
 [HTML spec](https://html.spec.whatwg.org/):
 
-| spec                                                                                           | status             |
-| ---------------------------------------------------------------------------------------------- | ------------------ |
-| **Structure**                                                                                  |                    |
+| spec                                                                                           | status            |
+| ---------------------------------------------------------------------------------------------- | ----------------- |
+| **Structure**                                                                                  |                   |
 | - [document structure](https://html.spec.whatwg.org/#writing)                                  | ✅                 |
 | - [modern doctype](https://html.spec.whatwg.org/#the-doctype)                                  | ✅                 |
-| **[Elements](https://html.spec.whatwg.org/#elements-2)**                                       |                    |
+| **[Elements](https://html.spec.whatwg.org/#elements-2)**                                       |                   |
 | - self-closing void elements                                                                   | ✅                 |
 | - raw text elements                                                                            | ✅                 |
 | - foreign elements (MathML & SVG namespaces)                                                   | ✅                 |
 | - normal elements                                                                              | ✅                 |
-| **[Attributes](https://html.spec.whatwg.org/#attributes-2)**                                   |                    |
+| **[Attributes](https://html.spec.whatwg.org/#attributes-2)**                                   |                   |
 | - Empty attribute syntax                                                                       | ✅                 |
 | - Unquoted attribute value syntax                                                              | ✅                 |
 | - Single-quoted attribute value syntax                                                         | ✅                 |
 | - Double-quoted attribute value syntax                                                         | ✅                 |
-| **[Optional tags]((https://html.spec.whatwg.org/#syntax-tag-omission))**                       |                    |
+| **[Optional tags](https://html.spec.whatwg.org/#syntax-tag-omission)**                         |                   |
 | - end tag omission                                                                             | ✅                 |
 | - start tag omission                                                                           | 🚫 (not planned)   |
 | content model validation and [restriction](https://html.spec.whatwg.org/#element-restrictions) | ⚠️ (not supported) |
