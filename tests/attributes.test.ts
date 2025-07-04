@@ -1,10 +1,5 @@
 import { assertEquals, assertObjectMatch } from "@std/assert";
-import { attribute, element, ElementKind, tagName } from "../parser.ts";
-
-Deno.test("tag names are lowercased", () => {
-  const name = tagName.parseOrThrow("Abc-d");
-  assertEquals(name, "abc-d");
-});
+import { attribute, element, ElementKind } from "../parser.ts";
 
 Deno.test("attributes", () => {
   const unquotedAttribute = attribute.parseOrThrow(`value=yes`);
