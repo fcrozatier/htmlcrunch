@@ -1,6 +1,6 @@
 {
   "name": "@fcrozatier/htmlcrunch",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "license": "MIT",
   "tasks": {
     "check": "deno fmt --check && deno lint && deno check **/*.ts",
