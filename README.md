@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="/assets/htmlcrunch.png" width="300" alt="">
+  <img src="/assets/htmlcrunch.png" width="600" alt="">
 </div>
 
 # HTMLCrunch
