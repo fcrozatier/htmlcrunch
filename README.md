@@ -67,7 +67,7 @@ HtmlCrunch implements the following parts of the
 | - Unquoted attribute value syntax                                                              | ✅                 |
 | - Single-quoted attribute value syntax                                                         | ✅                 |
 | - Double-quoted attribute value syntax                                                         | ✅                 |
-| **[Optional tags]((https://html.spec.whatwg.org/#syntax-tag-omission))**                       |                    |
+| **[Optional tags](https://html.spec.whatwg.org/#syntax-tag-omission)**                         |                    |
 | - end tag omission                                                                             | ✅                 |
 | - start tag omission                                                                           | 🚫 (not planned)   |
 | content model validation and [restriction](https://html.spec.whatwg.org/#element-restrictions) | ⚠️ (not supported) |

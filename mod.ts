@@ -4,6 +4,7 @@
  *  @module
  */
 
+export { type Parser } from "@fcrozatier/monarch";
 export {
   booleanAttributes,
   commentNode,
