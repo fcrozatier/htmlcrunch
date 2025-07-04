@@ -442,15 +442,14 @@ export const element: Parser<MElement> = createParser((input, position) => {
     elementNode.children?.push(child);
   }
 
-  const endTagLookahead = [
-    ...endTagOmission[tagName]?.open?.map((tag) => `^(?=<${tag})`) ?? [],
-    ...endTagOmission[tagName]?.closed?.map((tag) => `^(?=</${tag}>)`) ?? [],
-  ];
+  const endTagPattern = [
+    endTagOmission[tagName]?.open?.map((tag) => `^(?=<${tag})`),
+    endTagOmission[tagName]?.closed?.map((tag) => `^(?=</${tag}\s*>)`),
+    endTagOmission[tagName]?.regex,
+    `^</${tagName}\s*>`,
+  ].flat().filter(Boolean).join("|");
 
-  const endTagRegex = new RegExp(
-    [...endTagLookahead, `^</${tagName}>`].join("|"),
-    "i",
-  );
+  const endTagRegex = new RegExp(endTagPattern, "i");
 
   const endTagParser = tagName in endTagOmission
     ? regex(endTagRegex)
@@ -858,20 +857,23 @@ export const isMNode = (node: unknown): node is MNode => {
 /**
  * End tag omission data
  *
- * The map of elements that can omit their end tag when followed by specific open or closed tags
+ * The map of elements that can omit their end tag when followed by specific open or closed tags or if a specific regex pattern matches
  *
  * @see https://html.spec.whatwg.org/#syntax-tag-omission
  */
 const endTagOmission: Record<
   string,
-  { open?: string[]; closed?: string[] }
+  { open?: string[]; closed?: string[]; regex?: string }
 > = {
+  body: { closed: ["html"], regex: "$" },
   caption: {
     open: ["colgroup", "col", "thead", "tbody", "tfoot", "tr", "th", "td"],
   },
   colgroup: {
     open: ["thead", "tbody", "tfoot", "tr"],
   },
+  head: { open: ["body"] },
+  html: { regex: "$" },
   li: { open: ["li"], closed: ["ul", "ol", "menu"] },
   dd: { open: ["dd", "dt"], closed: ["dl", "div"] },
   dt: { open: ["dd", "dt"] },
