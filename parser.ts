@@ -334,7 +334,7 @@ const startTag: Parser<MElement> = seq(
  *
  * ```ts
  * import { commentNode } from "@fcrozatier/htmlcrunch";
- * import { assertEquals } from "@std/assert";
+ * import { assertObjectMatch } from "@std/assert";
  *
  * const hangingBracket = element.parseOrThrow(
  *   `<input
@@ -342,7 +342,7 @@ const startTag: Parser<MElement> = seq(
  *   >`,
  * );
  *
- * assertEquals(hangingBracket, {
+ * assertObjectMatch(hangingBracket, {
  *   tagName: "input",
  *   kind: "VOID",
  *   attributes: [["disabled",""]],
@@ -493,13 +493,13 @@ export const element: Parser<MElement> = createParser((input, position) => {
  *
  * ```ts
  * import { fragments, Kind } from "@fcrozatier/htmlcrunch";
- * import { assertEquals } from "@std/assert";
+ * import { assertObjectMatch } from "@std/assert";
  *
  * const content = fragments.parseOrThrow(
  *   '<img src="image.png"><br><input type=submit value=Ok />',
  * )
  *
- * assertEquals(content, [
+ * assertObjectMatch({ content }, { content: [
  *   {
  *     tagName: "img",
  *     kind: Kind.VOID,
@@ -511,7 +511,7 @@ export const element: Parser<MElement> = createParser((input, position) => {
  *     kind: Kind.VOID,
  *     attributes: [["type", "submit"], ["value", "Ok"]],
  *   },
- * ]);
+ * ]});
  * ```
  *
  * @see {@linkcode element}
