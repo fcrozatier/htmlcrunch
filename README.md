@@ -4,7 +4,7 @@
 
 # HTMLCrunch
 
-A clean, simple and lightweight HTML parser.
+A clean, simple, lightweight HTML parser.
 
 ## Features
 

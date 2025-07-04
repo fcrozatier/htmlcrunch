@@ -1,9 +1,3 @@
-/**
- * A simple, lightweight HTML parser
- *
- *  @module
- */
-
 export { type Parser } from "@fcrozatier/monarch";
 export {
   booleanAttributes,
