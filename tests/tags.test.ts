@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertObjectMatch } from "@std/assert";
 import { attribute, element, ElementKind, tagName } from "../parser.ts";
 
 Deno.test("tag names are lowercased", () => {
@@ -27,7 +27,7 @@ Deno.test("attributes", () => {
     disabled
     >`,
   );
-  assertEquals(hangingBracket, {
+  assertObjectMatch(hangingBracket, {
     tagName: "input",
     kind: ElementKind.VOID,
     attributes: [
@@ -41,7 +41,7 @@ Deno.test("attributes", () => {
   const recoverFromMissingWhiteSpace = element.parseOrThrow(
     `<input value="yes"class="a b c">`,
   );
-  assertEquals(recoverFromMissingWhiteSpace, {
+  assertObjectMatch(recoverFromMissingWhiteSpace, {
     tagName: "input",
     kind: ElementKind.VOID,
     attributes: [
@@ -53,7 +53,7 @@ Deno.test("attributes", () => {
   const allowDuplicateAttributes = element.parseOrThrow(
     `<input on:click="handleClick" on:click="log">`,
   );
-  assertEquals(allowDuplicateAttributes, {
+  assertObjectMatch(allowDuplicateAttributes, {
     tagName: "input",
     kind: ElementKind.VOID,
     attributes: [
@@ -65,7 +65,7 @@ Deno.test("attributes", () => {
   const keepAttributesCasing = element.parseOrThrow(
     `<input prop:ariaChecked="checked">`,
   );
-  assertEquals(keepAttributesCasing, {
+  assertObjectMatch(keepAttributesCasing, {
     tagName: "input",
     kind: ElementKind.VOID,
     attributes: [

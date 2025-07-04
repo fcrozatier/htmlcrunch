@@ -15,7 +15,7 @@ import {
   whitespaces,
   whitespaces1,
 } from "@fcrozatier/monarch/common";
-import { assertEquals, assertExists } from "@std/assert";
+import { assert, assertEquals, assertExists } from "@std/assert";
 
 interface MNodeBase {
   kind: string;
@@ -58,6 +58,7 @@ export interface MElement extends MNodeBase {
   kind: ElementKind;
   attributes: [string, string][];
   children?: MFragment;
+  selfClosing?: boolean;
 }
 
 /**
@@ -76,7 +77,7 @@ export type MNode = MCommentNode | MTextNode | MElement;
 export type MFragment = MNode[];
 
 /**
- * The different [types of HTML elements](https://html.spec.whatwg.org/#elements-2)
+ * The different [kinds of HTML elements](https://html.spec.whatwg.org/#elements-2)
  *
  * @example
  *
@@ -280,13 +281,16 @@ export const customElementName: Parser<string> = potentialCustomElementName
     return result(name);
   });
 
+// Tracks the stack of foreign namespaces
+const foreignStack: string[] = [];
+
 /**
  * HTML tag names are ASCII alphanumeric only
  *
  * https://html.spec.whatwg.org/#syntax-tag-name
  */
 const htmlTagName = regex(/^[a-z][a-z0-9]*/i)
-  .map((name) => name.toLowerCase())
+  .map((name) => foreignStack.length > 0 ? name : name.toLowerCase())
   .error("Invalid html tag name");
 
 /**
@@ -309,18 +313,22 @@ const startTag: Parser<MElement> = seq(
   regex(/\/?>/),
 ).error("Invalid start tag")
   .chain(([_, tagName, attributes, end]) => {
-    const selfClosing = end === "/>";
     const kind = elementKind(tagName);
+    const selfClosing = end === "/>" || kind === ElementKind.VOID;
 
-    if (selfClosing && kind !== ElementKind.VOID) {
+    if (
+      selfClosing &&
+      kind !== ElementKind.VOID &&
+      kind !== ElementKind.FOREIGN
+    ) {
       return fail.error("Unexpected self-closing tag on a non-void element");
     }
 
-    return result({ tagName, kind, attributes });
+    return result({ tagName, kind, attributes, selfClosing });
   });
 
 /**
- * Parses a single {@linkcode MElement element}
+ * Parses an HTML element and returns an {@linkcode MElement} node
  *
  * @example Hanging bracket
  *
@@ -371,18 +379,18 @@ export const element: Parser<MElement> = createParser((input, position) => {
   assertExists(openTagResult);
 
   const {
-    value: { tagName, kind, attributes },
+    value: { tagName, kind, attributes, selfClosing },
     remaining,
     position: openTagPosition,
   } = openTagResult;
 
-  if (kind === ElementKind.VOID) {
+  if (selfClosing) {
     // Void elements only have a start tag, end tags must not be specified
     // https://html.spec.whatwg.org/#syntax-tags
     if (remaining.match(new RegExp(String.raw`^\s*</${tagName}>`, "i"))) {
       return {
         success: false,
-        message: "Unexpected end tag on a void element",
+        message: "Unexpected end tag",
         position: openTagPosition,
       };
     }
@@ -444,9 +452,11 @@ export const element: Parser<MElement> = createParser((input, position) => {
 
   const endTagPattern = [
     endTagOmission[tagName]?.open?.map((tag) => `^(?=<${tag})`),
-    endTagOmission[tagName]?.closed?.map((tag) => `^(?=</${tag}\s*>)`),
+    endTagOmission[tagName]?.closed?.map((tag) =>
+      String.raw`^(?=</${tag}\s*>)`
+    ),
     endTagOmission[tagName]?.regex,
-    `^</${tagName}\s*>`,
+    String.raw`^</${tagName}\s*>`,
   ].flat().filter(Boolean).join("|");
 
   const endTagRegex = new RegExp(endTagPattern, "i");
@@ -460,6 +470,11 @@ export const element: Parser<MElement> = createParser((input, position) => {
 
   const [result] = res.results;
   assertExists(result);
+
+  if (tagName === "svg" || tagName === "math") {
+    assert(foreignStack.length > 0);
+    foreignStack.pop();
+  }
 
   return {
     success: true,
@@ -701,7 +716,7 @@ export const serializeNode = (
     : "";
   const startTag = `<${node.tagName}${attributesString}>`;
 
-  if (node.kind === ElementKind.VOID) return startTag;
+  if (node.selfClosing) return startTag;
 
   const content = node.children
     ? node.children.map((node) => serializeNode(node, options))
@@ -752,6 +767,8 @@ export const serializeFragments = (
 
 /**
  * Associates a tag name to its corresponding {@linkcode ElementKind}
+ *
+ * The final kind is determined by the {@linkcode element} parser depending on the foreign element stack
  */
 const elementKind = (tag: string): ElementKind => {
   if (tag === "template") return ElementKind.TEMPLATE;
@@ -759,6 +776,13 @@ const elementKind = (tag: string): ElementKind => {
   if (rawTextElements.includes(tag)) return ElementKind.RAW_TEXT;
   if (escapableRawTextElements.includes(tag)) {
     return ElementKind.ESCAPABLE_RAW_TEXT;
+  }
+  if (tag === "svg" || tag === "math") {
+    foreignStack.push(tag);
+    return ElementKind.FOREIGN;
+  }
+  if (foreignStack.length > 0) {
+    return ElementKind.FOREIGN;
   }
   return ElementKind.NORMAL;
 };

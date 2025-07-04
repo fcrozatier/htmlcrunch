@@ -1,15 +1,16 @@
 import { ParseError } from "@fcrozatier/monarch";
 import {
   assert,
-  assertEquals,
   assertInstanceOf,
+  assertObjectMatch,
   unreachable,
 } from "@std/assert";
 import { element, ElementKind, fragments } from "../parser.ts";
 
 Deno.test("simple void element", () => {
   const input = element.parseOrThrow('<input type="text">');
-  assertEquals(input, {
+
+  assertObjectMatch(input, {
     tagName: "input",
     kind: ElementKind.VOID,
     attributes: [["type", "text"]],
@@ -19,7 +20,8 @@ Deno.test("simple void element", () => {
 Deno.test("On void elements the closing slash is part of the unquoted attribute value", () => {
   // https://html.spec.whatwg.org/#start-tags
   const unquoted_attr_then_slash = element.parseOrThrow("<input type=text/>");
-  assertEquals(unquoted_attr_then_slash, {
+
+  assertObjectMatch(unquoted_attr_then_slash, {
     tagName: "input",
     kind: ElementKind.VOID,
     attributes: [["type", "text/"]],
@@ -67,17 +69,19 @@ Deno.test("multiple void elements", () => {
     '<img src="something.png"><br><input type=submit value=Ok />',
   );
 
-  assertEquals(content, [
-    {
-      tagName: "img",
-      kind: ElementKind.VOID,
-      attributes: [["src", "something.png"]],
-    },
-    { tagName: "br", kind: ElementKind.VOID, attributes: [] },
-    {
-      tagName: "input",
-      kind: ElementKind.VOID,
-      attributes: [["type", "submit"], ["value", "Ok"]],
-    },
-  ]);
+  assertObjectMatch({ content }, {
+    content: [
+      {
+        tagName: "img",
+        kind: ElementKind.VOID,
+        attributes: [["src", "something.png"]],
+      },
+      { tagName: "br", kind: ElementKind.VOID, attributes: [] },
+      {
+        tagName: "input",
+        kind: ElementKind.VOID,
+        attributes: [["type", "submit"], ["value", "Ok"]],
+      },
+    ],
+  });
 });
