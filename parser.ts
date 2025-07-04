@@ -302,7 +302,7 @@ const attributeValue = alt(
 );
 
 /**
- * Parsers an HTML attribute
+ * Parses an HTML attribute
  */
 export const attribute: Parser<[string, string]> = alt<[string, string]>(
   seq(
