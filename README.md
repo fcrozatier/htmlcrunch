@@ -1,11 +1,10 @@
 <div align="center">
-  <!-- <img src="" width="300" alt=""> -->
+  <img src="/assets/htmlcrunch.png" width="300" alt="">
 </div>
 
 # HTMLCrunch
 
-A clean, simple and lightweight HTML parser built on top of
-[Monarch](https://jsr.io/@fcrozatier/monarch)
+A clean, simple and lightweight HTML parser.
 
 ## Features
 
@@ -27,7 +26,19 @@ A clean, simple and lightweight HTML parser built on top of
   [remove comments](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/SerializationOptions)
 - the parser supports HTML [end tag omissions](#end-tag-omission)
 
-## Simple example
+## Getting Started
+
+Depending on your package manager:
+
+```sh
+deno add jsr:@fcrozatier/htmlcrunch
+pnpm i jsr:@fcrozatier/htmlcrunch
+npx jsr add @fcrozatier/htmlcrunch
+yarn add jsr:@fcrozatier/htmlcrunch
+bunx jsr add @fcrozatier/htmlcrunch
+```
+
+## Simple Example
 
 ```ts
 import { fragments, serializeFragments } from "@fcrozatier/htmlcrunch";
@@ -75,7 +86,7 @@ HtmlCrunch implements the following parts of the
 | [CDATA sections](https://html.spec.whatwg.org/#cdata-sections)                                 | ✅                 |
 | [comments](https://html.spec.whatwg.org/#comments)                                             | ✅                 |
 
-## End tag omission
+## End Tag Omission
 
 In HTML, the end tags of `<li>`, `<dt>`, `<dd>`, `<p>` and `<option>` elements,
 as well as the end tags of `<table>` children elements
