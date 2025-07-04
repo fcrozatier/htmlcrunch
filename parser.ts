@@ -17,6 +17,9 @@ import {
 } from "@fcrozatier/monarch/common";
 import { assert, assertEquals, assertExists } from "@std/assert";
 
+/**
+ * @internal
+ */
 interface MNodeBase {
   kind: string;
   parent?: MElement | undefined;
@@ -30,8 +33,17 @@ interface MNodeBase {
  * @see {@linkcode MElement}
  */
 export interface MCommentNode extends MNodeBase {
+  /**
+   * The kind of node
+   */
   kind: "COMMENT";
+  /**
+   * The content of the comment
+   */
   text: string;
+  /**
+   * Comment nodes don't have children
+   */
   children?: never;
 }
 
@@ -42,8 +54,17 @@ export interface MCommentNode extends MNodeBase {
  * @see {@linkcode MElement}
  */
 export interface MTextNode extends MNodeBase {
+  /**
+   * The kind of node
+   */
   kind: "TEXT";
+  /**
+   * The content of the text node
+   */
   text: string;
+  /**
+   * Text nodes don't have children
+   */
   children?: never;
 }
 
@@ -54,8 +75,17 @@ export interface MTextNode extends MNodeBase {
  * @see {@linkcode MElement}
  */
 export interface MCDATANode extends MNodeBase {
+  /**
+   * The kind of node
+   */
   kind: "CDATA";
+  /**
+   * The CDATA content
+   */
   text: string;
+  /**
+   * CDATA nodes don't have children
+   */
   children?: never;
 }
 
@@ -66,10 +96,27 @@ export interface MCDATANode extends MNodeBase {
  * @see {@linkcode MTextNode}
  */
 export interface MElement extends MNodeBase {
+  /**
+   * The element tag name
+   */
   tagName: string;
+  /**
+   * The kind of element
+   *
+   * One of the six [kinds of HTML elements](https://html.spec.whatwg.org/#elements-2)
+   */
   kind: ElementKind;
+  /**
+   * The attributes of the element
+   */
   attributes: [string, string][];
+  /**
+   * The children elements
+   */
   children?: MFragment;
+  /**
+   * Whether a node is a self-closing void or foreign element
+   */
   selfClosing?: boolean;
 }
 
@@ -179,6 +226,9 @@ export const commentNode = (text: string): MCommentNode => ({
   text,
 });
 
+/**
+ * @internal
+ */
 export const COMMENT_REGEX = /^(?!>|->)((?!<!--[^>]|-->|--!>|<!-$)\p{Any})*/v;
 
 /**
