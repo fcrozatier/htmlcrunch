@@ -161,8 +161,8 @@ Deno.test("<head> end tag omission", () => {
     serializeNode(html),
     `<html>
       <head>
-        <title>This is the title</title></head>
-      <body>
+        <title>This is the title</title>
+      </head><body>
       <p>This is the first paragraph.
       </p><p>This is the second paragraph, and it ends when the next div begins.
       </p><div>A block element</div></body></html>`,
