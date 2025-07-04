@@ -48,6 +48,18 @@ export interface MTextNode extends MNodeBase {
 }
 
 /**
+ * A CDATA node
+ *
+ * @see {@linkcode MCommentNode}
+ * @see {@linkcode MElement}
+ */
+export interface MCDATANode extends MNodeBase {
+  kind: "CDATA";
+  text: string;
+  children?: never;
+}
+
+/**
  * An element node
  *
  * @see {@linkcode MCommentNode}
@@ -69,7 +81,7 @@ export type MSpacesAndComments = (MTextNode | MCommentNode)[];
 /**
  * The generic node type
  */
-export type MNode = MCommentNode | MTextNode | MElement;
+export type MNode = MCommentNode | MTextNode | MElement | MCDATANode;
 
 /**
  * A fragment node
@@ -116,6 +128,7 @@ type ElementKind = keyof typeof ElementKind;
 export const NodeKind = {
   COMMENT: "COMMENT",
   TEXT: "TEXT",
+  CDATA: "CDATA",
   ...ElementKind,
 } as const;
 
@@ -211,6 +224,15 @@ const rawText: (tagName: string) => Parser<MTextNode[]> = (tagName: string) =>
   regex(
     new RegExp(String.raw`^(?:(?!</(?i:${tagName})[\t\n\f\r\u0020>/]).|\n)*`),
   ).map((t) => t.length > 0 ? [textNode(t)] : []);
+
+/**
+ * Parses [CDATA Sections](https://html.spec.whatwg.org/#cdata-sections)
+ */
+const cdata: Parser<MCDATANode> = between(
+  literal("<![CDATA["),
+  regex(/^(?:(?!\]\]>)\p{Any})*/u),
+  literal("]]>"),
+).map((text) => ({ kind: "CDATA", text }));
 
 /**
  * Parses an HTML attribute name
@@ -414,6 +436,7 @@ export const element: Parser<MElement> = createParser((input, position) => {
         avoidOpenTags
           ? regex(new RegExp("^" + avoidOpenTags, "i")).chain(() => element)
           : element,
+        ...(foreignStack.length > 0 ? [cdata] : []),
         comment,
       ),
     );
@@ -704,6 +727,9 @@ export const serializeNode = (
   if (node.kind === "TEXT") return node.text;
   if (node.kind === "COMMENT") {
     return removeComments ? "" : `<!--${node.text}-->`;
+  }
+  if (node.kind === "CDATA") {
+    return `<![CDATA[${node.text}]]>`;
   }
 
   const attributes = node.attributes.map(([k, v]) => {

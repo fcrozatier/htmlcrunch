@@ -1,4 +1,5 @@
 import { ParseError } from "@fcrozatier/monarch";
+import { assert } from "@std/assert";
 import { assertEquals } from "@std/assert/equals";
 import { assertInstanceOf } from "@std/assert/instance-of";
 import { assertObjectMatch } from "@std/assert/object-match";
@@ -8,9 +9,101 @@ import {
   customElementName,
   element,
   ElementKind,
+  fragments,
   serializeNode,
+  tagName,
   textNode,
 } from "../parser.ts";
+
+Deno.test("html tag names are lowercased", () => {
+  const name = tagName.parseOrThrow("Abc-d");
+  assertEquals(name, "abc-d");
+});
+
+Deno.test("foreign elements tag name casing is preserved", () => {
+  const markup = "<svg><animateTransform/></svg>";
+  const svg = element.parseOrThrow(markup);
+  assertEquals(serializeNode(svg), markup.replace("/>", ">"));
+});
+
+Deno.test("simple void element", () => {
+  const input = element.parseOrThrow('<input type="text">');
+
+  assertObjectMatch(input, {
+    tagName: "input",
+    kind: ElementKind.VOID,
+    attributes: [["type", "text"]],
+  });
+});
+
+Deno.test("On void elements the closing slash is part of the unquoted attribute value", () => {
+  // https://html.spec.whatwg.org/#start-tags
+  const unquoted_attr_then_slash = element.parseOrThrow("<input type=text/>");
+
+  assertObjectMatch(unquoted_attr_then_slash, {
+    tagName: "input",
+    kind: ElementKind.VOID,
+    attributes: [["type", "text/"]],
+  });
+});
+
+Deno.test("disallow self-closing non-void elements", () => {
+  try {
+    element.parseOrThrow("<div />");
+    unreachable();
+  } catch (error) {
+    assertInstanceOf(error, ParseError);
+    assert(
+      error.message.includes(
+        "Unexpected self-closing tag",
+      ),
+    );
+  }
+});
+
+Deno.test("disallow closing tags on void elements", () => {
+  try {
+    element.parseOrThrow('<input type="text"></input>');
+    unreachable();
+  } catch (error) {
+    assertInstanceOf(error, ParseError);
+    assert(error.message.includes("Unexpected end tag"));
+  }
+
+  try {
+    element.parseOrThrow(
+      `<input type="text">
+
+      </input>`,
+    );
+    unreachable();
+  } catch (error) {
+    assertInstanceOf(error, ParseError);
+    assert(error.message.includes("Unexpected end tag"));
+  }
+});
+
+Deno.test("multiple void elements", () => {
+  const content = fragments.parseOrThrow(
+    '<img src="something.png"><br><input type=submit value=Ok />',
+  );
+
+  assertObjectMatch({ content }, {
+    content: [
+      {
+        tagName: "img",
+        kind: ElementKind.VOID,
+        attributes: [["src", "something.png"]],
+      },
+      { tagName: "br", kind: ElementKind.VOID, attributes: [] },
+      {
+        tagName: "input",
+        kind: ElementKind.VOID,
+        attributes: [["type", "submit"], ["value", "Ok"]],
+      },
+    ],
+  });
+});
 
 Deno.test("raw text elements", () => {
   const style = element.parseOrThrow(
