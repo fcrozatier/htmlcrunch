@@ -52,11 +52,28 @@ assertEquals(content, serialized);
 HtmlCrunch implements the following parts of the
 [HTML spec](https://html.spec.whatwg.org/):
 
-| spec                                                                    | status           |
-| ----------------------------------------------------------------------- | ---------------- |
-| [end tag omission](https://html.spec.whatwg.org/#syntax-tag-omission)   | ✅               |
-| [start tag omission](https://html.spec.whatwg.org/#syntax-tag-omission) | 🚫 (not planned) |
-| x                                                                       | y                |
+| spec                                                                                           | status             |
+| ---------------------------------------------------------------------------------------------- | ------------------ |
+| [document structure](https://html.spec.whatwg.org/#writing)                                    | ✅                 |
+| [modern doctype](https://html.spec.whatwg.org/#the-doctype)                                    | ✅                 |
+| [legacy doctype](https://html.spec.whatwg.org/#doctype-legacy-string)                          | 🚫 (not planned)   |
+| **[Elements](https://html.spec.whatwg.org/#elements-2)**                                       |                    |
+| self-closing void elements                                                                     | ✅                 |
+| raw text elements                                                                              | ✅                 |
+| foreign elements (MathML & SVG namespaces)                                                     | ✅                 |
+| normal elements                                                                                | ✅                 |
+| **[Attributes](https://html.spec.whatwg.org/#attributes-2)**                                   |                    |
+| Empty attribute syntax                                                                         | ✅                 |
+| Unquoted attribute value syntax                                                                | ✅                 |
+| Single-quoted attribute value syntax                                                           | ✅                 |
+| Double-quoted attribute value syntax                                                           | ✅                 |
+| **[Optional tags]((https://html.spec.whatwg.org/#syntax-tag-omission))**                       |                    |
+| end tag omission                                                                               | ✅                 |
+| start tag omission                                                                             | 🚫 (not planned)   |
+| content model validation and [restriction](https://html.spec.whatwg.org/#element-restrictions) | ⚠️ (not supported) |
+| [text](https://html.spec.whatwg.org/#text-2)                                                   | ✅                 |
+| [CDATA sections](https://html.spec.whatwg.org/#cdata-sections)                                 | ⚠️ (not supported) |
+| [comments](https://html.spec.whatwg.org/#comments)                                             | ✅                 |
 
 ## End tag omission
 
@@ -123,8 +140,8 @@ const table = element.parseOrThrow(
 
 ## API
 
-See the [interactive documentation](https://jsr.io/@fcrozatier/htmlcrunch/doc)
-on JSR.
+The [interactive documentation](https://jsr.io/@fcrozatier/htmlcrunch/doc) is
+available on JSR.
 
 The [elements](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/element),
 [fragments](https://jsr.io/@fcrozatier/htmlcrunch/doc/~/fragments),
