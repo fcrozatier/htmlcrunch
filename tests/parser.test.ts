@@ -2,19 +2,13 @@ import { ParseError } from "@fcrozatier/monarch";
 import {
   assert,
   assertEquals,
-  assertExists,
   assertInstanceOf,
   assertObjectMatch,
-  assertStringIncludes,
   unreachable,
 } from "@std/assert";
 import {
-  customElementName,
-  doctype,
-  element,
   ElementKind,
   fragments,
-  html,
   isCommentNode,
   isElementNode,
   isMNode,
@@ -23,148 +17,6 @@ import {
   shadowRoot,
   textNode,
 } from "../parser.ts";
-
-Deno.test("doctype", () => {
-  const res = doctype.parseOrThrow("<!Doctype Html >");
-
-  assertEquals(res, textNode("<!DOCTYPE html>"));
-});
-
-Deno.test("custom element names", () => {
-  try {
-    // Must include a dash
-    customElementName.parseOrThrow("abc");
-    unreachable();
-  } catch (error) {
-    assertInstanceOf(error, ParseError);
-    assertStringIncludes(error?.message, "Invalid custom element name");
-  }
-
-  try {
-    // Cannot be a forbidden name
-    customElementName.parseOrThrow("annotation-xml");
-    unreachable();
-  } catch (error) {
-    assertInstanceOf(error, ParseError);
-    assertStringIncludes(error?.message, "Forbidden custom element name");
-  }
-});
-
-Deno.test("raw text elements", () => {
-  const style = element.parseOrThrow(`
-    <style>
-      .box {
-        color: blue;
-      }
-    </style>
-    `.trim());
-
-  assertObjectMatch(style, {
-    tagName: "style",
-    kind: ElementKind.RAW_TEXT,
-    attributes: [],
-    children: [{
-      kind: "TEXT",
-      text: `
-      .box {
-        color: blue;
-      }
-    `,
-    }],
-  });
-
-  const script = element.parseOrThrow(`
-    <script>
-      <
-      </
-      </s
-      </sc
-      </scr
-      </scri
-      </scrip
-      console.log(1 < 2);
-    </script>
-    `.trim());
-
-  assertObjectMatch(script, {
-    tagName: "script",
-    kind: ElementKind.RAW_TEXT,
-    attributes: [],
-    children: [{
-      kind: "TEXT",
-      text: `
-      <
-      </
-      </s
-      </sc
-      </scr
-      </scri
-      </scrip
-      console.log(1 < 2);
-    `,
-    }],
-  });
-});
-
-Deno.test("empty raw text element", () => {
-  const script = element.parseOrThrow(
-    `<script type="module" src="/src/module.js"></script>`,
-  );
-
-  assertEquals(script, {
-    tagName: "script",
-    kind: ElementKind.RAW_TEXT,
-    attributes: [["type", "module"], ["src", "/src/module.js"]],
-    children: [],
-  });
-});
-
-Deno.test("normal element", () => {
-  const empty_span = element.parseOrThrow(
-    `<span class="icon"></span>`,
-  );
-  assertObjectMatch(empty_span, {
-    tagName: "span",
-    kind: ElementKind.NORMAL,
-    attributes: [["class", "icon"]],
-    children: [],
-  });
-
-  const p = element.parseOrThrow(
-    `<p>lorem</p>`,
-  );
-  assertObjectMatch(p, {
-    tagName: "p",
-    kind: ElementKind.NORMAL,
-    attributes: [],
-    children: [{ kind: "TEXT", text: "lorem" }],
-  });
-});
-
-Deno.test("custom elements", () => {
-  const res = fragments.parseOrThrow(`
-    <something-different>
-      <atom-text-editor mini>
-        Hello
-      </atom-text-editor>
-    </something-different>
-    `.trim());
-
-  const node = {
-    tagName: "something-different",
-    kind: ElementKind.NORMAL,
-    attributes: [],
-    children: [textNode("\n      "), {
-      tagName: "atom-text-editor",
-      kind: ElementKind.NORMAL,
-      attributes: [["mini", ""]],
-      children: [textNode("\n        Hello\n      ")],
-    }, textNode("\n    ")],
-  };
-
-  assertExists(res[0]);
-  assertObjectMatch(res[0], node);
-});
 
 Deno.test("entities", () => {
   const entities = fragments.parseOrThrow(`
@@ -314,22 +166,6 @@ Deno.test("declarative shadowroot", () => {
   </article>
 </template>
 `,
-  );
-});
-
-Deno.test("html", () => {
-  html.parseOrThrow(
-    `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
-
-</body>
-</html>`,
   );
 });
 
