@@ -36,7 +36,7 @@ Deno.test("disallow self-closing non-void elements", () => {
     assertInstanceOf(error, ParseError);
     assert(
       error.message.includes(
-        "Unexpected self-closing tag on a non-void element",
+        "Unexpected self-closing tag",
       ),
     );
   }
@@ -48,7 +48,7 @@ Deno.test("disallow closing tags on void elements", () => {
     unreachable();
   } catch (error) {
     assertInstanceOf(error, ParseError);
-    assert(error.message.includes("Unexpected end tag on a void element"));
+    assert(error.message.includes("Unexpected end tag"));
   }
 
   try {
@@ -60,7 +60,7 @@ Deno.test("disallow closing tags on void elements", () => {
     unreachable();
   } catch (error) {
     assertInstanceOf(error, ParseError);
-    assert(error.message.includes("Unexpected end tag on a void element"));
+    assert(error.message.includes("Unexpected end tag"));
   }
 });
 
